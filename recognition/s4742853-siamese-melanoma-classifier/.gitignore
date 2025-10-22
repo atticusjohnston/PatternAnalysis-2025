@@ -1,0 +1,17 @@
+# Data
+data/
+*.nii
+*.nii.gz
+datasets/
+
+# Models
+models/
+*.h5
+*.pt
+*.pth
+*.ckpt
+
+# Standard Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
