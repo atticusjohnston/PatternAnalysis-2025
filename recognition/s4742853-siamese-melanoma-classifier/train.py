@@ -79,14 +79,16 @@ class Trainer:
         total_loss = 0
         batch_count = len(self.train_loader)
         epoch_start = time.time()
+        iter_start = time.time()
 
         for batch_idx, ((img1, img2), labels) in enumerate(self.train_loader):
-            batch_start = time.time()
+            data_time = time.time() - iter_start
 
+            transfer_start = time.time()
             img1 = img1.to(self.device)
             img2 = img2.to(self.device)
             labels = labels.float().to(self.device)
-            data_time = time.time() - batch_start
+            transfer_time = time.time() - transfer_start
 
             forward_start = time.time()
             self.optimiser.zero_grad()
@@ -103,14 +105,16 @@ class Trainer:
             optim_time = time.time() - optim_start
 
             total_loss += loss.item()
-            batch_time = time.time() - batch_start
+            batch_time = time.time() - iter_start
 
             if (batch_idx + 1) % 10 == 0:
                 elapsed = time.time() - epoch_start
                 avg_batch_time = elapsed / (batch_idx + 1)
                 eta = avg_batch_time * (batch_count - batch_idx - 1)
                 logger.info(
-                    f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s - ETA: {eta:.1f}s")
+                    f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, xfer: {transfer_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s - ETA: {eta:.1f}s")
+
+            iter_start = time.time()
 
         avg_loss = total_loss / batch_count
         logger.info(f"Epoch {epoch + 1} - Training complete - Avg Loss: {avg_loss:.4f}")
@@ -208,8 +212,8 @@ if __name__ == "__main__":
     train_dataset = SiameseMelanomaClassifierDataset(args.train_csv, args.train_img_dir, mode='train')
     val_dataset = SiameseMelanomaClassifierDataset(args.val_csv, args.val_img_dir, mode='val')
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=4, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=4, shuffle=False)
 
     network = PretrainedSiameseNetwork() if args.model == 'pretrained' else SiameseNetwork()
     trainer = Trainer(network, train_loader, val_loader, device, lr=args.lr)
