@@ -15,12 +15,12 @@ class SiameseMelanomaClassifierDataset(Dataset):
 
     @staticmethod
     def _build_transforms(mode):
-        mean = [0.485, 0.456, 0.406]
-        std = [0.229, 0.224, 0.225]
+        mean = [0.8057231307029724, 0.6201786994934082, 0.5902535915374756]
+        std = [0.0848047286272049, 0.09797607362270355, 0.1101665124297142]
 
         if mode == 'train':
             return transforms.Compose([
-                transforms.Resize((224, 224)),
+                # transforms.Resize((224, 224)),
                 transforms.RandomHorizontalFlip(),
                 transforms.RandomRotation(10),
                 transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
@@ -29,7 +29,7 @@ class SiameseMelanomaClassifierDataset(Dataset):
             ])
         elif mode in ['val', 'test']:
             return transforms.Compose([
-                transforms.Resize((224, 224)),
+                # transforms.Resize((224, 224)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean, std)
             ])

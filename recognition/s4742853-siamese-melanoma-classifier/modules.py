@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import models
+from torchvision.models import ResNet18_Weights
 
 
 class SiameseNetwork(nn.Module):
@@ -13,27 +15,61 @@ class SiameseNetwork(nn.Module):
         self.conv4 = nn.Conv2d(128, 256, kernel_size=4, stride=1)
 
         self.pool = nn.MaxPool2d(2, 2)
+        self.dropout = nn.Dropout(0.3)
 
-        self.fc1 = nn.Linear(256 * 20 * 20, 4096)
+        self.fc1 = nn.Linear(256 * 20 * 20, 512)
 
-        self.alpha = nn.Parameter(torch.ones(4096))
+        self.alpha = nn.Parameter(torch.ones(512))
 
     def forward_one(self, x):
-        # print(x.shape)
-        x = self.pool(F.relu(self.conv1(x)))
-        # print(x.shape)
-        x = self.pool(F.relu(self.conv2(x)))
-        # print(x.shape)
-        x = self.pool(F.relu(self.conv3(x)))
-        # print(x.shape)
+        x = F.relu(self.conv1(x))
+        x = self.pool(x)
+        x = self.dropout(x)
+
+        x = F.relu(self.conv2(x))
+        x = self.pool(x)
+        x = self.dropout(x)
+
+        x = F.relu(self.conv3(x))
+        x = self.pool(x)
         x = F.relu(self.conv4(x))
-        # print(x.shape)
 
         x = x.view(x.size(0), -1)
-        # print(x.shape)
         x = torch.sigmoid(self.fc1(x))
-        # print(x.shape)
 
+        return x
+
+    def forward(self, x1, x2):
+        h1 = self.forward_one(x1)
+        h2 = self.forward_one(x2)
+
+        distance = torch.abs(h1 - h2)
+        weighted_distance = torch.sum(self.alpha * distance, dim=1)
+
+        p = torch.sigmoid(weighted_distance)
+
+        return p
+
+
+class PretrainedSiameseNetwork(nn.Module):
+    def __init__(self, pretrained=True):
+        super(PretrainedSiameseNetwork, self).__init__()
+
+        resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT if pretrained else None)
+        self.feature_extractor = nn.Sequential(*list(resnet.children())[:-1])
+
+        self.fc = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128)
+        )
+
+        self.alpha = nn.Parameter(torch.ones(128))
+
+    def forward_one(self, x):
+        x = self.feature_extractor(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
         return x
 
     def forward(self, x1, x2):

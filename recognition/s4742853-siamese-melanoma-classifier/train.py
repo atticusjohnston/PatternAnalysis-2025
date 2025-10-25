@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from dataset import SiameseMelanomaClassifierDataset
-from modules import SiameseNetwork
+from modules import SiameseNetwork, PretrainedSiameseNetwork
 from torch.utils.data import DataLoader
 import time
 import matplotlib.pyplot as plt
@@ -16,8 +16,8 @@ class Plotter:
         self.val_losses = []
 
     def add(self, train_loss, val_loss):
-        self.train_losses.append(train_loss)
-        self.val_losses.append(val_loss)
+        self.train_losses.append(float(train_loss))
+        self.val_losses.append(float(val_loss))
 
     def plot(self, save_path):
         plt.figure(figsize=(10, 6))
@@ -52,15 +52,26 @@ class Trainer:
         total_loss = 0
 
         for (img1, img2), labels in tqdm(self.train_loader, desc="Training", leave=False):
+            # load_start = time.time()
             img1 = img1.to(self.device)
             img2 = img2.to(self.device)
             labels = labels.float().to(self.device)
+            # print(f"Data load+transfer: {time.time() - load_start:.3f}s")
 
             self.optimiser.zero_grad()
+
+            # start = time.time()
             outputs = self.network(img1, img2)
+            # print(f"Forward: {time.time() - start:.3f}s")
+
+            # start = time.time()
             loss = self.criterion(outputs, labels)
             loss.backward()
+            # print(f"Backward: {time.time() - start:.3f}s")
+
+            # start = time.time()
             self.optimiser.step()
+            # print(f"Optimizer: {time.time() - start:.3f}s")
 
             total_loss += loss.item()
 
@@ -109,19 +120,19 @@ if __name__ == "__main__":
     )
 
     train_dataset = SiameseMelanomaClassifierDataset('data/cleaned/train_pairs.csv',
-                                                     'data/cleaned/train_images',
+                                                     'data/cleaned/train_images_224',
                                                      mode='train')
     val_dataset = SiameseMelanomaClassifierDataset('data/cleaned/validation_pairs.csv',
-                                                   'data/cleaned/validation_images',
+                                                   'data/cleaned/validation_images_224',
                                                    mode='val')
 
-    batch_size = 1
+    batch_size = 128
     epochs = 50
     lr = 1e-4
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
-    network = SiameseNetwork()
+    network = PretrainedSiameseNetwork()
     trainer = Trainer(network, train_loader, val_loader, device, lr=lr)
     trainer.train(epochs=epochs)
