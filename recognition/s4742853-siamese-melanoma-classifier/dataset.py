@@ -4,6 +4,9 @@ import pandas as pd
 from PIL import Image
 import os
 from torchvision import transforms
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SiameseMelanomaClassifierDataset(Dataset):
@@ -12,6 +15,10 @@ class SiameseMelanomaClassifierDataset(Dataset):
         self.img_dir = img_dir
         self.mode = mode
         self.transform = self._build_transforms(mode)
+
+        logger.info(f"Loading dataset: {pairs_csv_path}")
+        logger.info(f"Image directory: {img_dir}")
+        logger.info(f"Mode: {mode}")
 
     @staticmethod
     def _build_transforms(mode):

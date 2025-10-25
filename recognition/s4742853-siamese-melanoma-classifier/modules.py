@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
 from torchvision.models import ResNet18_Weights
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SiameseNetwork(nn.Module):
@@ -20,6 +23,8 @@ class SiameseNetwork(nn.Module):
         self.fc1 = nn.Linear(256 * 20 * 20, 512)
 
         self.alpha = nn.Parameter(torch.ones(512))
+
+        logger.info("Initialized SiameseNetwork with custom architecture")
 
     def forward_one(self, x):
         x = F.relu(self.conv1(x))
@@ -65,6 +70,8 @@ class PretrainedSiameseNetwork(nn.Module):
         )
 
         self.alpha = nn.Parameter(torch.ones(128))
+
+        logger.info(f"Initialized PretrainedSiameseNetwork (pretrained={pretrained})")
 
     def forward_one(self, x):
         x = self.feature_extractor(x)
