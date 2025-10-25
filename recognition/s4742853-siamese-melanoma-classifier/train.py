@@ -1,3 +1,4 @@
+import matplotlib
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -7,7 +8,10 @@ from modules import SiameseNetwork, PretrainedSiameseNetwork
 from torch.utils.data import DataLoader
 import time
 import matplotlib.pyplot as plt
+
+matplotlib.use('Agg')
 import os
+import argparse
 
 
 class Plotter:
@@ -52,26 +56,15 @@ class Trainer:
         total_loss = 0
 
         for (img1, img2), labels in tqdm(self.train_loader, desc="Training", leave=False):
-            # load_start = time.time()
             img1 = img1.to(self.device)
             img2 = img2.to(self.device)
             labels = labels.float().to(self.device)
-            # print(f"Data load+transfer: {time.time() - load_start:.3f}s")
 
             self.optimiser.zero_grad()
-
-            # start = time.time()
             outputs = self.network(img1, img2)
-            # print(f"Forward: {time.time() - start:.3f}s")
-
-            # start = time.time()
             loss = self.criterion(outputs, labels)
             loss.backward()
-            # print(f"Backward: {time.time() - start:.3f}s")
-
-            # start = time.time()
             self.optimiser.step()
-            # print(f"Optimizer: {time.time() - start:.3f}s")
 
             total_loss += loss.item()
 
@@ -97,7 +90,7 @@ class Trainer:
         pbar.set_postfix({'train_loss': pbar.postfix['train_loss'], 'val_loss': f'{avg_loss:.4f}'})
         return avg_loss
 
-    def train(self, epochs):
+    def train(self, epochs, save_dir):
         pbar = tqdm(range(epochs), desc="Epochs")
         for epoch in pbar:
             train_loss = self.train_epoch(pbar)
@@ -106,33 +99,43 @@ class Trainer:
             self.scheduler.step()
 
         timestamp = int(time.time())
-        os.makedirs('models', exist_ok=True)
-        model_path = f'models/siamese_melanoma_classifier_{timestamp}.pt'
+        os.makedirs(save_dir, exist_ok=True)
+        model_path = os.path.join(save_dir, f'siamese_melanoma_classifier_{timestamp}.pt')
         torch.save(self.network.state_dict(), model_path)
-        self.plotter.plot(f'models/siamese_melanoma_classifier_{timestamp}_loss.png')
+        self.plotter.plot(os.path.join(save_dir, f'siamese_melanoma_classifier_{timestamp}_loss.png'))
+        print(f"Model saved to {model_path}")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train-csv', type=str, default='data/cleaned/train_pairs.csv')
+    parser.add_argument('--train-img-dir', type=str, default='data/cleaned/train_images_224')
+    parser.add_argument('--val-csv', type=str, default='data/cleaned/validation_pairs.csv')
+    parser.add_argument('--val-img-dir', type=str, default='data/cleaned/validation_images_224')
+    parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--save-dir', type=str, default='models')
+    parser.add_argument('--model', type=str, default='custom', choices=['pretrained', 'custom'])
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
+    args = parse_args()
+
     device = torch.device(
         "mps" if torch.mps.is_available()
         else "cuda" if torch.cuda.is_available()
         else "cpu"
     )
+    print(f"Using device: {device}")
 
-    train_dataset = SiameseMelanomaClassifierDataset('data/cleaned/train_pairs.csv',
-                                                     'data/cleaned/train_images_224',
-                                                     mode='train')
-    val_dataset = SiameseMelanomaClassifierDataset('data/cleaned/validation_pairs.csv',
-                                                   'data/cleaned/validation_images_224',
-                                                   mode='val')
+    train_dataset = SiameseMelanomaClassifierDataset(args.train_csv, args.train_img_dir, mode='train')
+    val_dataset = SiameseMelanomaClassifierDataset(args.val_csv, args.val_img_dir, mode='val')
 
-    batch_size = 128
-    epochs = 50
-    lr = 1e-4
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-
-    network = PretrainedSiameseNetwork()
-    trainer = Trainer(network, train_loader, val_loader, device, lr=lr)
-    trainer.train(epochs=epochs)
+    network = PretrainedSiameseNetwork() if args.model == 'pretrained' else SiameseNetwork()
+    trainer = Trainer(network, train_loader, val_loader, device, lr=args.lr)
+    trainer.train(epochs=args.epochs, save_dir=args.save_dir)
