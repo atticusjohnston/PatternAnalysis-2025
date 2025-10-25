@@ -100,6 +100,12 @@ class Trainer:
             loss.backward()
             backward_time = time.time() - backward_start
 
+            # Compute gradient norms
+            grad_norms = {}
+            for name, param in self.network.named_parameters():
+                if param.grad is not None:
+                    grad_norms[name] = param.grad.norm().item()
+
             optim_start = time.time()
             self.optimiser.step()
             optim_time = time.time() - optim_start
@@ -107,12 +113,20 @@ class Trainer:
             total_loss += loss.item()
             batch_time = time.time() - iter_start
 
-            if (batch_idx + 1) % 10 == 0:
+            if batch_idx == 0 or (batch_idx + 1) % 10 == 0:
                 elapsed = time.time() - epoch_start
                 avg_batch_time = elapsed / (batch_idx + 1)
                 eta = avg_batch_time * (batch_count - batch_idx - 1)
+
+                # Batch statistics
+                label_stats = f"labels[min:{labels.min():.3f}, max:{labels.max():.3f}, mean:{labels.mean():.3f}, unique:{labels.unique().numel()}]"
+                output_stats = f"outputs[min:{outputs.min():.3f}, max:{outputs.max():.3f}, mean:{outputs.mean():.3f}, std:{outputs.std():.3f}]"
+                grad_fc1 = grad_norms.get('fc1.weight', 0)
+                grad_alpha = grad_norms.get('alpha', 0)
+                grad_stats = f"grads[fc1:{grad_fc1:.6f}, alpha:{grad_alpha:.6f}]"
+
                 logger.info(
-                    f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, xfer: {transfer_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s - ETA: {eta:.1f}s")
+                    f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - {label_stats} - {output_stats} - {grad_stats} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, xfer: {transfer_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s - ETA: {eta:.1f}s")
 
             iter_start = time.time()
 
