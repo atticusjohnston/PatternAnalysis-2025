@@ -17,6 +17,5 @@ python train.py \
     --batch-size 128 \
     --epochs 1 \
     --lr 1e-4 \
-    --num-workers 8 \
     --save-dir models \
     --model custom
