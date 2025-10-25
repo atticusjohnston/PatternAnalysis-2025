@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=melanoma_train
+#SBATCH --job-name=melanoma_train_custom
 #SBATCH --partition=a100
 #SBATCH --output=logs/train_%j.out
 #SBATCH --error=logs/train_%j.err
@@ -27,7 +27,7 @@ python train.py \
     --epochs 1 \
     --lr 1e-3 \
     --save-dir models \
-    --model pretrained \
+    --model custom \
     --log-file logs/train_$SLURM_JOB_ID.log
 
 echo "Job finished at: $(date)"
