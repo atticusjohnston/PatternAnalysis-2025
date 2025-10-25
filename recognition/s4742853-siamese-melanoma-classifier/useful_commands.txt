@@ -1,3 +1,4 @@
+ssh <id>@rangpur.compute.eait.uq.edu.au
 squeue -u $USER -o "%.10i %.9P %.20j %.2t %.10M %.6D %R"
 scontrol show job <jobid>
 sacct -j <jobid>

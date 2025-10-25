@@ -1,15 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=melanoma_test
+#SBATCH --job-name=melanoma_train
 #SBATCH --partition=a100
-#SBATCH --output=logs/test_%j.out
-#SBATCH --error=logs/test_%j.err
+#SBATCH --output=logs/train_%j.out
+#SBATCH --error=logs/train_%j.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=atticus.johnston@student.uq.edu.au
 
 echo "Job started at: $(date)"
 echo "Running on node: $(hostname)"
 echo "Job ID: $SLURM_JOB_ID"
-echo "GPU devices: $CUDA_VISIBLE_DEVICES"
 
 cd ~/PatternAnalysis-2025/recognition/s4742853-siamese-melanoma-classifier
 source venv/bin/activate
