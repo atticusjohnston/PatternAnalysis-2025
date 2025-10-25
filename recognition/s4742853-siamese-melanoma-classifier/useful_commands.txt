@@ -1,8 +1,12 @@
 squeue -u $USER -o "%.10i %.9P %.20j %.2t %.10M %.6D %R"
 scontrol show job <jobid>
 sacct -j <jobid>
+
+
 tail -f $(ls -t logs/*.out | head -1)
 cat $(ls -t **/*.out 2>/dev/null | head -1)
+
+
 squeue -u $USER -o "%.10i %.8j %.2t %.10M %.6D %R"
 
 

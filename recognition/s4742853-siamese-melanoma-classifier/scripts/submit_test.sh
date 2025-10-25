@@ -13,7 +13,7 @@ echo "Running on node: $(hostname)"
 echo "Job ID: $SLURM_JOB_ID"
 echo "GPU devices: $CUDA_VISIBLE_DEVICES"
 
-cd ~/melanoma
+cd ~/PatternAnalysis-2025/recognition/s4742853-siamese-melanoma-classifier
 source venv/bin/activate
 
 python train.py \
@@ -25,7 +25,7 @@ python train.py \
     --epochs 1 \
     --lr 1e-3 \
     --save-dir models \
-    --model custom \
+    --model pretrained \
     --log-file logs/train_$SLURM_JOB_ID.log
 
 echo "Job finished at: $(date)"
