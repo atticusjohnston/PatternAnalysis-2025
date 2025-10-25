@@ -22,7 +22,7 @@ class SiameseNetwork(nn.Module):
 
         self.fc1 = nn.Linear(256 * 20 * 20, 512)
 
-        self.alpha = nn.Parameter(torch.ones(512))
+        self.alpha = nn.Parameter(torch.ones(512) * 0.01)
 
         logger.info("Initialized SiameseNetwork with custom architecture")
 
@@ -40,7 +40,7 @@ class SiameseNetwork(nn.Module):
         x = F.relu(self.conv4(x))
 
         x = x.view(x.size(0), -1)
-        x = torch.sigmoid(self.fc1(x))
+        x = F.relu(self.fc1(x))
 
         return x
 

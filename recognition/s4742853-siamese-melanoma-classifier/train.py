@@ -106,6 +106,7 @@ class Trainer:
                 if param.grad is not None:
                     grad_norms[name] = param.grad.norm().item()
 
+            torch.nn.utils.clip_grad_norm_(network.parameters(), max_norm=1.0)
             optim_start = time.time()
             self.optimiser.step()
             optim_time = time.time() - optim_start
