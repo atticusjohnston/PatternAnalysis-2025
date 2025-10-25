@@ -15,7 +15,6 @@ class SiameseMelanomaClassifierDataset(Dataset):
 
     @staticmethod
     def _build_transforms(mode):
-        # TODO: Choose an image size.
         # TODO: Choose image transforms.
         if mode == 'train':
             return transforms.Compose([
