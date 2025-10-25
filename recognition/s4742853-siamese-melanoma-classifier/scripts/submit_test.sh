@@ -1,8 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=melanoma_test
-#SBATCH --partition=a100-test
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=8
+#SBATCH --partition=a100
 #SBATCH --output=logs/test_%j.out
 #SBATCH --error=logs/test_%j.err
 #SBATCH --mail-type=ALL
