@@ -19,20 +19,20 @@ class SiameseNetwork(nn.Module):
         self.alpha = nn.Parameter(torch.ones(4096))
 
     def forward_one(self, x):
-        print(x.shape)
+        # print(x.shape)
         x = self.pool(F.relu(self.conv1(x)))
-        print(x.shape)
+        # print(x.shape)
         x = self.pool(F.relu(self.conv2(x)))
-        print(x.shape)
+        # print(x.shape)
         x = self.pool(F.relu(self.conv3(x)))
-        print(x.shape)
+        # print(x.shape)
         x = F.relu(self.conv4(x))
-        print(x.shape)
+        # print(x.shape)
 
         x = x.view(x.size(0), -1)
-        print(x.shape)
+        # print(x.shape)
         x = torch.sigmoid(self.fc1(x))
-        print(x.shape)
+        # print(x.shape)
 
         return x
 
