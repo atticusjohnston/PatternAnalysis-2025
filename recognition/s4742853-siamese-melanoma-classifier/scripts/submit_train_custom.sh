@@ -23,7 +23,7 @@ python train.py \
     --train-img-dir data/cleaned/train_images_224 \
     --val-csv data/cleaned/validation_pairs.csv \
     --val-img-dir data/cleaned/validation_images_224 \
-    --batch-size 256 \
+    --batch-size 128 \
     --epochs 1 \
     --lr 1e-3 \
     --save-dir models \
