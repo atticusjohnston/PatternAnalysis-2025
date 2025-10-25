@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from dataset import SiameseMelanomaClassifierDataset
-from modules import SiameseNetwork
+from modules import SiameseNetwork, PretrainedSiameseNetwork
 from torch.utils.data import DataLoader
 import time
 import matplotlib.pyplot as plt
@@ -199,6 +199,7 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--save-dir', type=str, default='models')
+    parser.add_argument('--model', type=str, default='custom', choices=['pretrained', 'custom'])
     parser.add_argument('--log-file', type=str, default=None)
     return parser.parse_args()
 
@@ -229,7 +230,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True, shuffle=True, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True, shuffle=False, pin_memory=True)
 
-    network = SiameseNetwork()
+    network = PretrainedSiameseNetwork() if args.model == 'pretrained' else SiameseNetwork()
     trainer = Trainer(network, train_loader, val_loader, device, lr=args.lr)
     trainer.train(epochs=args.epochs, save_dir=args.save_dir)
 

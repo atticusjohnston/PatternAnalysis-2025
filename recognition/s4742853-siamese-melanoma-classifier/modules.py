@@ -40,8 +40,43 @@ class SiameseNetwork(nn.Module):
         x = F.relu(self.conv4(x))
 
         x = x.view(x.size(0), -1)
-        x = F.relu(self.fc1(x))
+        x = torch.sigmoid(self.fc1(x))
 
+        return x
+
+    def forward(self, x1, x2):
+        h1 = self.forward_one(x1)
+        h2 = self.forward_one(x2)
+
+        distance = torch.abs(h1 - h2)
+        weighted_distance = torch.sum(self.alpha * distance, dim=1)
+
+        p = torch.sigmoid(weighted_distance)
+
+        return p
+
+
+class PretrainedSiameseNetwork(nn.Module):
+    def __init__(self, pretrained=True):
+        super(PretrainedSiameseNetwork, self).__init__()
+
+        resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT if pretrained else None)
+        self.feature_extractor = nn.Sequential(*list(resnet.children())[:-1])
+
+        self.fc = nn.Sequential(
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128)
+        )
+
+        self.alpha = nn.Parameter(torch.ones(128))
+
+        logger.info(f"Initialized PretrainedSiameseNetwork (pretrained={pretrained})")
+
+    def forward_one(self, x):
+        x = self.feature_extractor(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
         return x
 
     def forward(self, x1, x2):

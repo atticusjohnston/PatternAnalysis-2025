@@ -27,6 +27,7 @@ python train.py \
     --epochs 1 \
     --lr 1e-4 \
     --save-dir models \
+    --model pretrained \
     --log-file logs/train_$SLURM_JOB_ID.log
 
 echo "Job finished at: $(date)"
