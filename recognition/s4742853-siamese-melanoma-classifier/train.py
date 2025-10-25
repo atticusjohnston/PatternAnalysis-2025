@@ -212,8 +212,8 @@ if __name__ == "__main__":
     train_dataset = SiameseMelanomaClassifierDataset(args.train_csv, args.train_img_dir, mode='train')
     val_dataset = SiameseMelanomaClassifierDataset(args.val_csv, args.val_img_dir, mode='val')
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=4, persistent_workers=True, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True, shuffle=True, prefetch_factor=4)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=4, persistent_workers=True, shuffle=False, prefetch_factor=4)
 
     network = PretrainedSiameseNetwork() if args.model == 'pretrained' else SiameseNetwork()
     trainer = Trainer(network, train_loader, val_loader, device, lr=args.lr)
