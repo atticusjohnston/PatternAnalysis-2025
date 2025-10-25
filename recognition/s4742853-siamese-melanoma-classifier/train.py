@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from dataset import SiameseMelanomaClassifierDataset
-from modules import SiameseNetwork, PretrainedSiameseNetwork
+from modules import SiameseNetwork
 from torch.utils.data import DataLoader
 import time
 import matplotlib.pyplot as plt
