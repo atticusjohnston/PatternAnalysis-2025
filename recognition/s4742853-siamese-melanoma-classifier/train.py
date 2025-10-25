@@ -54,7 +54,7 @@ class Plotter:
 
 class Trainer:
     def __init__(self,
-                 network: SiameseNetwork,
+                 network: nn.Module,
                  train_loader: SiameseMelanomaClassifierDataset,
                  val_loader: SiameseMelanomaClassifierDataset,
                  device: torch.device,
@@ -100,13 +100,14 @@ class Trainer:
             loss.backward()
             backward_time = time.time() - backward_start
 
+            # Replace gradient logging section with:
+
             # Compute gradient norms
             grad_norms = {}
             for name, param in self.network.named_parameters():
                 if param.grad is not None:
                     grad_norms[name] = param.grad.norm().item()
 
-            torch.nn.utils.clip_grad_norm_(network.parameters(), max_norm=1.0)
             optim_start = time.time()
             self.optimiser.step()
             optim_time = time.time() - optim_start
@@ -122,9 +123,19 @@ class Trainer:
                 # Batch statistics
                 label_stats = f"labels[min:{labels.min():.3f}, max:{labels.max():.3f}, mean:{labels.mean():.3f}, unique:{labels.unique().numel()}]"
                 output_stats = f"outputs[min:{outputs.min():.3f}, max:{outputs.max():.3f}, mean:{outputs.mean():.3f}, std:{outputs.std():.3f}]"
-                grad_fc1 = grad_norms.get('fc1.weight', 0)
-                grad_alpha = grad_norms.get('alpha', 0)
-                grad_stats = f"grads[fc1:{grad_fc1:.6f}, alpha:{grad_alpha:.6f}]"
+
+                # Adaptive gradient stats based on model type
+                if 'fc1.weight' in grad_norms:  # Custom model
+                    grad_fc = grad_norms.get('fc1.weight', 0)
+                    grad_conv = grad_norms.get('conv1.weight', 0)
+                    grad_alpha = grad_norms.get('alpha', 0)
+                    grad_stats = f"grads[conv1:{grad_conv:.6f}, fc1:{grad_fc:.6f}, alpha:{grad_alpha:.6f}]"
+                else:  # Pretrained model
+                    grad_fc0 = grad_norms.get('fc.0.weight', 0)
+                    grad_fc2 = grad_norms.get('fc.2.weight', 0)
+                    grad_feat = grad_norms.get('feature_extractor.7.1.conv2.weight', 0)
+                    grad_alpha = grad_norms.get('alpha', 0)
+                    grad_stats = f"grads[feat:{grad_feat:.6f}, fc0:{grad_fc0:.6f}, fc2:{grad_fc2:.6f}, alpha:{grad_alpha:.6f}]"
 
                 logger.info(
                     f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - {label_stats} - {output_stats} - {grad_stats} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, xfer: {transfer_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s - ETA: {eta:.1f}s")
