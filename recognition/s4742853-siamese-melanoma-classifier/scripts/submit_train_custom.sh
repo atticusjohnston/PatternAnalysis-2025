@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=melanoma_train_custom
-#SBATCH --partition=a100-test
+#SBATCH --partition=a100
 #SBATCH --output=logs/train_%j.out
 #SBATCH --error=logs/train_%j.err
 #SBATCH --time=4:00:00
