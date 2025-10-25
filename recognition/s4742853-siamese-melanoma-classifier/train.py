@@ -78,22 +78,39 @@ class Trainer:
         self.network.train()
         total_loss = 0
         batch_count = len(self.train_loader)
+        epoch_start = time.time()
 
         for batch_idx, ((img1, img2), labels) in enumerate(self.train_loader):
+            batch_start = time.time()
+
             img1 = img1.to(self.device)
             img2 = img2.to(self.device)
             labels = labels.float().to(self.device)
+            data_time = time.time() - batch_start
 
+            forward_start = time.time()
             self.optimiser.zero_grad()
             outputs = self.network(img1, img2)
             loss = self.criterion(outputs, labels)
+            forward_time = time.time() - forward_start
+
+            backward_start = time.time()
             loss.backward()
+            backward_time = time.time() - backward_start
+
+            optim_start = time.time()
             self.optimiser.step()
+            optim_time = time.time() - optim_start
 
             total_loss += loss.item()
+            batch_time = time.time() - batch_start
 
             if (batch_idx + 1) % 10 == 0:
-                logger.info(f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f}")
+                elapsed = time.time() - epoch_start
+                avg_batch_time = elapsed / (batch_idx + 1)
+                eta = avg_batch_time * (batch_count - batch_idx - 1)
+                logger.info(
+                    f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s - ETA: {eta:.1f}s")
 
         avg_loss = total_loss / batch_count
         logger.info(f"Epoch {epoch + 1} - Training complete - Avg Loss: {avg_loss:.4f}")
