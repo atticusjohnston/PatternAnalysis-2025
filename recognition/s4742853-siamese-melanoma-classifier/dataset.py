@@ -28,8 +28,8 @@ class SiameseMelanomaClassifierDataset(Dataset):
         if mode == 'train':
             return transforms.Compose([
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomRotation(10),
-                transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+                transforms.RandomRotation(20),
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
                 transforms.ToTensor(),
                 transforms.Normalize(mean, std)
             ])

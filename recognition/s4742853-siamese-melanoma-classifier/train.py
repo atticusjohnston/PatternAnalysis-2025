@@ -60,19 +60,25 @@ class Trainer:
                  train_loader: SiameseMelanomaClassifierDataset,
                  val_loader: SiameseMelanomaClassifierDataset,
                  device: torch.device,
-                 lr: float = 0.0001
+                 lr: float = 0.0001,
+                 patience: int = 5
                  ):
         self.network = network.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.device = device
         self.criterion = nn.BCELoss()
-        self.optimiser = optim.Adam(network.parameters(), lr=lr)
+        self.optimiser = optim.Adam(network.parameters(), lr=lr, weight_decay=1e-5)
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimiser, gamma=0.99)
         self.plotter = Plotter()
 
+        self.patience = patience
+        self.best_val_loss = float('inf')
+        self.patience_counter = 0
+
         logger.info(f"Trainer initialized with device: {device}")
         logger.info(f"Learning rate: {lr}")
+        logger.info(f"Early stopping patience: {patience}")
         logger.info(f"Training batches: {len(train_loader)}")
         logger.info(f"Validation batches: {len(val_loader)}")
 
@@ -174,6 +180,10 @@ class Trainer:
         logger.info(f"Starting training for {epochs} epochs")
         start_time = time.time()
 
+        os.makedirs(save_dir, exist_ok=True)
+        timestamp = int(time.time())
+        model_path = os.path.join(save_dir, f'siamese_melanoma_classifier_{timestamp}.pt')
+
         for epoch in range(epochs):
             epoch_start = time.time()
             logger.info(f"{'=' * 50}")
@@ -182,6 +192,18 @@ class Trainer:
             train_loss = self.train_epoch(epoch)
             val_loss = self.validate(epoch)
             self.plotter.add(train_loss, val_loss)
+
+            if val_loss < self.best_val_loss:
+                self.best_val_loss = val_loss
+                self.patience_counter = 0
+                torch.save(self.network.state_dict(), model_path)
+                logger.info(f"New best validation loss: {val_loss:.4f} - Model saved")
+            else:
+                self.patience_counter += 1
+
+                if self.patience_counter >= self.patience:
+                    logger.info(f"Early stopping triggered at epoch {epoch + 1}")
+                    break
 
             lr_before = self.optimiser.param_groups[0]['lr']
             self.scheduler.step()
@@ -194,12 +216,7 @@ class Trainer:
         total_time = time.time() - start_time
         logger.info(f"{'=' * 50}")
         logger.info(f"Training completed in {total_time:.2f}s ({total_time / 60:.2f}m)")
-
-        timestamp = int(time.time())
-        os.makedirs(save_dir, exist_ok=True)
-        model_path = os.path.join(save_dir, f'siamese_melanoma_classifier_{timestamp}.pt')
-        torch.save(self.network.state_dict(), model_path)
-        logger.info(f"Model saved to {model_path}")
+        logger.info(f"Best model saved to {model_path}")
 
         plot_path = os.path.join(save_dir, f'siamese_melanoma_classifier_{timestamp}_loss.png')
         self.plotter.plot(plot_path)
