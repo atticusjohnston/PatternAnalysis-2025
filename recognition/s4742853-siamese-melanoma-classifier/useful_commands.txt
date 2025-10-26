@@ -12,7 +12,6 @@ alias sq='squeue -u $USER'
 squeue -u $USER
 squeue -u $USER -o "%.10i %.8j %.2t %.10M %.6D %R"
 
-sbatch scripts/submit_train_pretrain.sh
-sbatch scripts/submit_train_pretrain_test.sh
-
-sbatch scripts/submit_job.sh test pretrained 1761451246 10
+sbatch scripts/submit_job.sh
+sbatch scripts/submit_job.sh both 512 5 1e-5 pretrained "" 10
+sbatch scripts/submit_job.sh test 512 5 1e-5 pretrained 1761451246 10
