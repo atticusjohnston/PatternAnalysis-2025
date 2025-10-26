@@ -82,18 +82,25 @@ class PretrainedSiameseNetwork(nn.Module):
         return x
 
     def forward(self, x1, x2):
-        # if torch.rand(1) < 0.1:
-        #     logger.debug(f"x1: min={x1.min():.3f}, max={x1.max():.3f}, mean={x1.mean():.3f}")
-        #     logger.debug(f"x2: min={x2.min():.3f}, max={x2.max():.3f}, mean={x2.mean():.3f}")
-        #     logger.debug(f"x1==x2: {torch.allclose(x1, x2)}")
+        # Debug: Check inputs
+        if torch.rand(1) < 0.01:
+            x_identical = torch.allclose(x1, x2, atol=1e-6)
+            logger.debug(f"INPUT: x1==x2: {x_identical}")
+            logger.debug(f"INPUT: x1[min:{x1.min():.3f}, max:{x1.max():.3f}, mean:{x1.mean():.3f}]")
+            logger.debug(f"INPUT: x2[min:{x2.min():.3f}, max:{x2.max():.3f}, mean:{x2.mean():.3f}]")
 
         h1 = self.forward_one(x1)
         h2 = self.forward_one(x2)
 
+        # Debug: Check outputs
         if torch.rand(1) < 0.01:
-            logger.debug(f"h1: min={h1.min():.3f}, max={h1.max():.3f}, mean={h1.mean():.3f}, std={h1.std():.3f}")
-            logger.debug(f"h2: min={h2.min():.3f}, max={h2.max():.3f}, mean={h2.mean():.3f}, std={h2.std():.3f}")
-            logger.debug(f"alpha: min={self.alpha.min():.3f}, max={self.alpha.max():.3f}")
+            h_identical = torch.allclose(h1, h2, atol=1e-6)
+            logger.debug(f"OUTPUT: h1==h2: {h_identical}")
+            logger.debug(
+                f"OUTPUT: h1[min:{h1.min():.3f}, max:{h1.max():.3f}, mean:{h1.mean():.3f}, std:{h1.std():.3f}]")
+            logger.debug(
+                f"OUTPUT: h2[min:{h2.min():.3f}, max:{h2.max():.3f}, mean:{h2.mean():.3f}, std:{h2.std():.3f}]")
+            logger.debug(f"OUTPUT: alpha[min:{self.alpha.min():.3f}, max:{self.alpha.max():.3f}]")
 
         distance = torch.abs(h1 - h2)
         weighted_distance = torch.sum(self.alpha * distance, dim=1)

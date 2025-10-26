@@ -47,6 +47,26 @@ class SiameseMelanomaClassifierDataset(Dataset):
     def __getitem__(self, idx):
         row = self.data.iloc[idx]
         image_paths = [os.path.join(self.img_dir, f"{row[f'image_{i}']}.jpg") for i in (1, 2)]
-        images = [self.transform(Image.open(p).convert('RGB')) for p in image_paths]
+
+        # Debug: Check if paths are identical
+        if image_paths[0] == image_paths[1]:
+            logger.warning(f"idx={idx}: IDENTICAL PATHS: {image_paths[0]}")
+
+        images_raw = [Image.open(p).convert('RGB') for p in image_paths]
+
+        # Debug: Check if raw images are identical before transform
+        if torch.rand(1) < 0.01:
+            arr1 = torch.tensor(list(images_raw[0].getdata())).float()
+            arr2 = torch.tensor(list(images_raw[1].getdata())).float()
+            identical = torch.allclose(arr1, arr2)
+            logger.debug(f"idx={idx}: raw images identical={identical}, paths={image_paths}")
+
+        images = [self.transform(img) for img in images_raw]
+
+        # Debug: Check if transformed images are identical
+        if torch.rand(1) < 0.01:
+            identical = torch.allclose(images[0], images[1])
+            logger.debug(f"idx={idx}: transformed images identical={identical}")
+
         label = torch.tensor(row['pair_label'], dtype=torch.float32)
         return tuple(images), label

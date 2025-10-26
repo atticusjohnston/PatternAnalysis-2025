@@ -96,6 +96,9 @@ class Trainer:
             img1 = img1.to(self.device)
             img2 = img2.to(self.device)
             labels = labels.float().to(self.device)
+            if batch_idx == 0 and epoch == 0:
+                logger.debug(f"BATCH 0: img1==img2: {torch.allclose(img1, img2)}")
+                logger.debug(f"BATCH 0: labels: {labels[:10]}")
             transfer_time = time.time() - transfer_start
 
             forward_start = time.time()
