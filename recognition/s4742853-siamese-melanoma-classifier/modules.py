@@ -76,12 +76,36 @@ class PretrainedSiameseNetwork(nn.Module):
         logger.info(f"Initialized PretrainedSiameseNetwork (pretrained={pretrained})")
 
     def forward_one(self, x):
+        # Track through network
+        input_stats = (x.min().item(), x.max().item(), x.mean().item(), x.std().item())
+
         x = self.feature_extractor(x)
+        feat_stats = (x.min().item(), x.max().item(), x.mean().item(), x.std().item())
+
         x = x.view(x.size(0), -1)
+        flat_stats = (x.min().item(), x.max().item(), x.mean().item(), x.std().item())
+
         x = self.fc(x)
+        output_stats = (x.min().item(), x.max().item(), x.mean().item(), x.std().item())
+
+        if torch.rand(1) < 0.01:
+            logger.debug(
+                f"forward_one: input{input_stats} -> feat{feat_stats} -> flat{flat_stats} -> out{output_stats}")
+
         return x
 
     def forward(self, x1, x2):
+        def forward(self, x1, x2):
+            # Check BN running stats
+            if torch.rand(1) < 0.01:
+                for name, module in self.feature_extractor.named_modules():
+                    if isinstance(module, nn.BatchNorm2d):
+                        logger.debug(
+                            f"BN {name}: training={module.training}, running_mean={module.running_mean[:3]}, running_var={module.running_var[:3]}")
+                        break
+
+            h1 = self.forward_one(x1)
+            h2 = self.forward_one(x2)
 
         h1 = self.forward_one(x1)
         h2 = self.forward_one(x2)

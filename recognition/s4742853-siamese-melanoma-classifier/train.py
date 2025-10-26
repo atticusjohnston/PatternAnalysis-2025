@@ -122,6 +122,15 @@ class Trainer:
             optim_start = time.time()
             self.optimiser.step()
             optim_time = time.time() - optim_start
+            if batch_idx in [40, 45, 50, 55]:
+                fc_weight_sample = self.network.fc[0].weight[0, :5].detach().cpu()
+                logger.warning(f"BATCH {batch_idx}: fc[0].weight[0,:5] = {fc_weight_sample}")
+
+                # Check if weights are updating
+                if hasattr(self, 'prev_fc_weight'):
+                    weight_change = (fc_weight_sample - self.prev_fc_weight).abs().sum().item()
+                    logger.warning(f"BATCH {batch_idx}: weight change = {weight_change:.6f}")
+                self.prev_fc_weight = fc_weight_sample.clone()
 
             total_loss += loss.item()
             batch_time = time.time() - iter_start
