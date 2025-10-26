@@ -76,21 +76,40 @@ class PretrainedSiameseNetwork(nn.Module):
         logger.info(f"Initialized PretrainedSiameseNetwork (pretrained={pretrained})")
 
     def forward_one(self, x):
-        # Track through network
-        input_stats = (x.min().item(), x.max().item(), x.mean().item(), x.std().item())
-
         x = self.feature_extractor(x)
-        feat_stats = (x.min().item(), x.max().item(), x.mean().item(), x.std().item())
-
         x = x.view(x.size(0), -1)
-        flat_stats = (x.min().item(), x.max().item(), x.mean().item(), x.std().item())
 
-        x = self.fc(x)
-        output_stats = (x.min().item(), x.max().item(), x.mean().item(), x.std().item())
+        # Check input to fc
+        if torch.rand(1) < 0.01:
+            has_nan = torch.isnan(x).any().item()
+            has_inf = torch.isinf(x).any().item()
+            logger.debug(f"Before fc: has_nan={has_nan}, has_inf={has_inf}")
+
+        # fc is Sequential: Linear(512, 256), ReLU(), Linear(256, 128)
+        x = self.fc[0](x)  # First linear
 
         if torch.rand(1) < 0.01:
             logger.debug(
-                f"forward_one: input{input_stats} -> feat{feat_stats} -> flat{flat_stats} -> out{output_stats}")
+                f"After fc[0] (Linear 512->256): min={x.min():.3f}, max={x.max():.3f}, mean={x.mean():.3f}, std={x.std():.3f}")
+            zero_activations = (x == 0).float().mean().item()
+            logger.debug(f"Zero activations after fc[0]: {zero_activations:.3%}")
+
+        x = self.fc[1](x)  # ReLU
+
+        if torch.rand(1) < 0.01:
+            logger.debug(
+                f"After fc[1] (ReLU): min={x.min():.3f}, max={x.max():.3f}, mean={x.mean():.3f}, std={x.std():.3f}")
+            zero_activations = (x == 0).float().mean().item()
+            logger.debug(f"Dead neurons after ReLU: {zero_activations:.3%}")
+
+        x = self.fc[2](x)  # Second linear
+
+        if torch.rand(1) < 0.01:
+            logger.debug(
+                f"After fc[2] (Linear 256->128): min={x.min():.3f}, max={x.max():.3f}, mean={x.mean():.3f}, std={x.std():.3f}")
+            has_nan = torch.isnan(x).any().item()
+            has_inf = torch.isinf(x).any().item()
+            logger.debug(f"After fc: has_nan={has_nan}, has_inf={has_inf}")
 
         return x
 
