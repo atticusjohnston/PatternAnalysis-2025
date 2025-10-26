@@ -33,7 +33,7 @@ class SiameseMelanomaClassifierDataset(Dataset):
                 transforms.ToTensor(),
                 transforms.Normalize(mean, std)
             ])
-        elif mode in ['val', 'test']:
+        elif mode == 'val':
             return transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean, std)

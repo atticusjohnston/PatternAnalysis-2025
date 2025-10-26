@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=melanoma_train
+#SBATCH --job-name=melanoma
 #SBATCH --partition=a100-test
 #SBATCH --output=logs/job_%j.out
 #SBATCH --error=logs/job_%j.err
