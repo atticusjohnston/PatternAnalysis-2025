@@ -76,11 +76,6 @@ class Trainer:
 
     def train_epoch(self, epoch):
         self.network.train()
-        if epoch == 0:
-            for name, param in self.network.named_parameters():
-                if 'feature_extractor' in name:
-                    logger.info(f"{name}: requires_grad={param.requires_grad}")
-                    break  # Just check one
 
         total_loss = 0
         batch_count = len(self.train_loader)
