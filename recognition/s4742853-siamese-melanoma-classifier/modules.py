@@ -96,7 +96,6 @@ class PretrainedSiameseNetwork(nn.Module):
             logger.debug(f"alpha: min={self.alpha.min():.3f}, max={self.alpha.max():.3f}")
 
         distance = torch.abs(h1 - h2)
-        # weighted_distance = torch.sum(self.alpha * distance, dim=1)
-        weighted_distance = torch.sum(distance, dim=1)
+        weighted_distance = torch.sum(self.alpha * distance, dim=1)
         p = torch.sigmoid(weighted_distance)
         return p
