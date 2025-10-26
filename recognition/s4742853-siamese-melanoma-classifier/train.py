@@ -118,13 +118,6 @@ class Trainer:
                 if param.grad is not None:
                     grad_norms[name] = param.grad.norm().item()
 
-            if batch_idx == 50:
-                logger.warning(f"BATCH 50 DIAGNOSTICS:")
-                logger.warning(f"Loss: {loss.item():.6f}")
-                logger.warning(f"Labels: {labels[:10]}")
-                logger.warning(f"Outputs: {outputs[:10]}")
-                logger.warning(f"Loss gradient w.r.t outputs: {outputs.grad}")
-
             optim_start = time.time()
             self.optimiser.step()
             optim_time = time.time() - optim_start
