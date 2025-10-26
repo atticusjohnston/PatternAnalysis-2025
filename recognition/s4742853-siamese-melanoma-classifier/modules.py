@@ -70,6 +70,8 @@ class PretrainedSiameseNetwork(nn.Module):
         )
 
         self.alpha = nn.Parameter(torch.ones(128))
+        for param in self.feature_extractor.parameters():
+            param.requires_grad = True
 
         logger.info(f"Initialized PretrainedSiameseNetwork (pretrained={pretrained})")
 
