@@ -1,9 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=melanoma_train
-#SBATCH --partition=a100
+#SBATCH --partition=a100-test
 #SBATCH --output=logs/job_%j.out
 #SBATCH --error=logs/job_%j.err
-#SBATCH --time=4:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
