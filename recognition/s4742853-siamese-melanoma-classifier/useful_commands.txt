@@ -12,5 +12,5 @@ cat $(ls -t **/*.log 2>/dev/null | head -1)
 squeue -u $USER
 squeue -u $USER -o "%.10i %.8j %.2t %.10M %.6D %R"
 
-sbatch scripts/submit_training.sh
+sbatch scripts/submit_train_pretrain.sh
 
