@@ -69,7 +69,7 @@ class PretrainedSiameseNetwork(nn.Module):
             nn.Linear(256, 128)
         )
 
-        self.alpha = nn.Parameter(torch.ones(128))
+        self.alpha = nn.Parameter(torch.ones(128) * 0.01)
         for param in self.feature_extractor.parameters():
             param.requires_grad = True
 
