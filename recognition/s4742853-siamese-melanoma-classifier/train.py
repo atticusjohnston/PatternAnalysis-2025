@@ -247,7 +247,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True, shuffle=True, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True, shuffle=False, pin_memory=True)
 
-    network = PretrainedSiameseNetwork() if args.model == 'pretrained' else SiameseNetwork()
+    network = PretrainedSiameseNetwork(pretrained=False) if args.model == 'pretrained' else SiameseNetwork()
     trainer = Trainer(network, train_loader, val_loader, device, lr=args.lr)
     trainer.train(epochs=args.epochs, save_dir=args.save_dir)
 
