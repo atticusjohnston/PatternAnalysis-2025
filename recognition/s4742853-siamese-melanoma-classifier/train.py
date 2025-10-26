@@ -138,7 +138,9 @@ class Trainer:
                     grad_stats = f"grads[feat:{grad_feat:.6f}, fc0:{grad_fc0:.6f}, fc2:{grad_fc2:.6f}, alpha:{grad_alpha:.6f}]"
 
                 logger.info(
-                    f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - {label_stats} - {output_stats} - {grad_stats} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, xfer: {transfer_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s - ETA: {eta:.1f}s")
+                    f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - ETA: {eta:.1f}s")
+                logger.debug(
+                    f"{label_stats} - {output_stats} - {grad_stats} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, xfer: {transfer_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s")
 
             iter_start = time.time()
 

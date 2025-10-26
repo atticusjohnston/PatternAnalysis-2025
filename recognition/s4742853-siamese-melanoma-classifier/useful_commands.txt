@@ -5,7 +5,6 @@ sacct -j <jobid>
 scp <id>@rangpur.compute.eait.uq.edu.au:~/PatternAnalysis-2025/recognition/.../models/\*.png .
 
 
-
 tail -f $(ls -t logs/*.log | head -1)
 cat $(ls -t **/*.log 2>/dev/null | head -1)
 

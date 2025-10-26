@@ -83,17 +83,17 @@ class PretrainedSiameseNetwork(nn.Module):
 
     def forward(self, x1, x2):
         if torch.rand(1) < 0.1:
-            logger.info(f"x1: min={x1.min():.3f}, max={x1.max():.3f}, mean={x1.mean():.3f}")
-            logger.info(f"x2: min={x2.min():.3f}, max={x2.max():.3f}, mean={x2.mean():.3f}")
-            logger.info(f"x1==x2: {torch.allclose(x1, x2)}")
+            logger.debug(f"x1: min={x1.min():.3f}, max={x1.max():.3f}, mean={x1.mean():.3f}")
+            logger.debug(f"x2: min={x2.min():.3f}, max={x2.max():.3f}, mean={x2.mean():.3f}")
+            logger.debug(f"x1==x2: {torch.allclose(x1, x2)}")
 
         h1 = self.forward_one(x1)
         h2 = self.forward_one(x2)
 
         if torch.rand(1) < 0.1:  # Print occasionally
-            logger.info(f"h1: min={h1.min():.3f}, max={h1.max():.3f}, mean={h1.mean():.3f}, std={h1.std():.3f}")
-            logger.info(f"h2: min={h2.min():.3f}, max={h2.max():.3f}, mean={h2.mean():.3f}, std={h2.std():.3f}")
-            logger.info(f"alpha: min={self.alpha.min():.3f}, max={self.alpha.max():.3f}")
+            logger.debug(f"h1: min={h1.min():.3f}, max={h1.max():.3f}, mean={h1.mean():.3f}, std={h1.std():.3f}")
+            logger.debug(f"h2: min={h2.min():.3f}, max={h2.max():.3f}, mean={h2.mean():.3f}, std={h2.std():.3f}")
+            logger.debug(f"alpha: min={self.alpha.min():.3f}, max={self.alpha.max():.3f}")
 
         distance = torch.abs(h1 - h2)
         weighted_distance = torch.sum(self.alpha * distance, dim=1)
