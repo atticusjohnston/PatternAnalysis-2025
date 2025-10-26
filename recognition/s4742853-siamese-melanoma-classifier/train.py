@@ -1,8 +1,9 @@
+# train.py
 import matplotlib
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from dataset import SiameseMelanomaClassifierDataset
+from dataset import SiameseMelanomaClassifierDataset, TestDataset
 from modules import SiameseNetwork, PretrainedSiameseNetwork
 from torch.utils.data import DataLoader
 import time
@@ -11,8 +12,9 @@ import logging
 import sys
 import os
 import argparse
+import pandas as pd
 
-matplotlib.use('Agg')  # Only pngs
+matplotlib.use('Agg')
 
 
 def setup_logging(log_file=None):
@@ -107,7 +109,6 @@ class Trainer:
 
             torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1.0)
 
-            # Compute gradient norms
             grad_norms = {}
             for name, param in self.network.named_parameters():
                 if param.grad is not None:
@@ -127,13 +128,12 @@ class Trainer:
 
                 output_stats = f"outputs[min:{outputs.min():.3f}, max:{outputs.max():.3f}, mean:{outputs.mean():.3f}, std:{outputs.std():.3f}]"
 
-                # Adaptive gradient stats based on model type
-                if 'fc1.weight' in grad_norms:  # Custom model
+                if 'fc1.weight' in grad_norms:
                     grad_fc = grad_norms.get('fc1.weight', 0)
                     grad_conv = grad_norms.get('conv1.weight', 0)
                     grad_alpha = grad_norms.get('alpha', 0)
                     grad_stats = f"grads[conv1:{grad_conv:.6f}, fc1:{grad_fc:.6f}, alpha:{grad_alpha:.6f}]"
-                else:  # Pretrained model
+                else:
                     grad_fc0 = grad_norms.get('fc.0.weight', 0)
                     grad_fc2 = grad_norms.get('fc.2.weight', 0)
                     grad_feat = grad_norms.get('feature_extractor.7.1.conv2.weight', 0)
@@ -204,18 +204,88 @@ class Trainer:
         plot_path = os.path.join(save_dir, f'siamese_melanoma_classifier_{timestamp}_loss.png')
         self.plotter.plot(plot_path)
 
+        return timestamp
+
+
+class Tester:
+    def __init__(self,
+                 network: nn.Module,
+                 test_loader: TestDataset,
+                 device: torch.device,
+                 output_path: str
+                 ):
+        self.network = network.to(device)
+        self.test_loader = test_loader
+        self.device = device
+        self.output_path = output_path
+
+        logger.info(f"Tester initialized with device: {device}")
+        logger.info(f"Test batches: {len(test_loader)}")
+
+    def test(self):
+        self.network.eval()
+        predictions = []
+
+        logger.info("Starting testing...")
+        start_time = time.time()
+
+        with torch.no_grad():
+            for idx, (test_img, ref_imgs, true_label, img_name) in enumerate(self.test_loader):
+                test_img = test_img.to(self.device)
+
+                class_probs = {}
+                for label, ref_batch in ref_imgs.items():
+                    ref_batch = ref_batch.squeeze(0).to(self.device)
+                    test_batch = test_img.repeat(ref_batch.size(0), 1, 1, 1)
+
+                    probs = self.network(test_batch, ref_batch)
+                    class_probs[label] = probs.mean().item()
+
+                pred_label = max(class_probs, key=class_probs.get)
+                predictions.append({
+                    'image_name': img_name[0],
+                    'true_label': true_label.item(),
+                    'pred_label': pred_label
+                })
+
+                if (idx + 1) % 100 == 0:
+                    logger.info(f"Tested {idx + 1}/{len(self.test_loader)} images")
+
+        total_time = time.time() - start_time
+        correct = sum(1 for p in predictions if p['true_label'] == p['pred_label'])
+        accuracy = correct / len(predictions)
+
+        logger.info(f"{'=' * 50}")
+        logger.info(f"Testing completed in {total_time:.2f}s ({total_time / 60:.2f}m)")
+        logger.info(f"Test Accuracy: {accuracy:.4f} ({correct}/{len(predictions)})")
+
+        os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
+        df = pd.DataFrame(predictions)
+        df.to_csv(self.output_path, index=False)
+        logger.info(f"Predictions saved to {self.output_path}")
+
+        return accuracy
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, default='train', choices=['train', 'test', 'both'])
     parser.add_argument('--train-csv', type=str, default='data/cleaned/train_pairs.csv')
     parser.add_argument('--train-img-dir', type=str, default='data/cleaned/train_images_224')
     parser.add_argument('--val-csv', type=str, default='data/cleaned/validation_pairs.csv')
     parser.add_argument('--val-img-dir', type=str, default='data/cleaned/validation_images_224')
+    parser.add_argument('--test-csv', type=str, default='data/cleaned/test.csv')
+    parser.add_argument('--test-img-dir', type=str, default='data/cleaned/test_images_224')
+    parser.add_argument('--ref-csv', type=str, default='data/cleaned/train.csv')
+    parser.add_argument('--ref-img-dir', type=str, default='data/cleaned/train_images_224')
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--k', type=int, default=10)
     parser.add_argument('--save-dir', type=str, default='models')
+    parser.add_argument('--results-dir', type=str, default='results')
     parser.add_argument('--model', type=str, default='custom', choices=['pretrained', 'custom'])
+    parser.add_argument('--model-timestamp', type=str, default=None)
     parser.add_argument('--log-file', type=str, default=None)
     return parser.parse_args()
 
@@ -228,12 +298,12 @@ if __name__ == "__main__":
     args = parse_args()
 
     if args.log_file is None:
-        args.log_file = os.path.join('logs', f'train_{int(time.time())}.log')
+        args.log_file = os.path.join('logs', f'{args.mode}_{int(time.time())}.log')
 
     setup_logging(args.log_file)
 
     logger.info("=" * 50)
-    logger.info("Starting melanoma classification training")
+    logger.info(f"Mode: {args.mode}")
     logger.info("=" * 50)
     logger.info(f"Arguments: {vars(args)}")
 
@@ -244,14 +314,37 @@ if __name__ == "__main__":
     )
     logger.info(f"Using device: {device}")
 
-    train_dataset = SiameseMelanomaClassifierDataset(args.train_csv, args.train_img_dir, mode='train')
-    val_dataset = SiameseMelanomaClassifierDataset(args.val_csv, args.val_img_dir, mode='val')
+    model_timestamp = args.model_timestamp
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True, shuffle=True, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True, shuffle=False, pin_memory=True)
+    if args.mode in ['train', 'both']:
+        train_dataset = SiameseMelanomaClassifierDataset(args.train_csv, args.train_img_dir, mode='train')
+        val_dataset = SiameseMelanomaClassifierDataset(args.val_csv, args.val_img_dir, mode='val')
 
-    network = PretrainedSiameseNetwork(pretrained=True) if args.model == 'pretrained' else SiameseNetwork()
-    trainer = Trainer(network, train_loader, val_loader, device, lr=args.lr)
-    trainer.train(epochs=args.epochs, save_dir=args.save_dir)
+        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True,
+                                  shuffle=True, pin_memory=True)
+        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True,
+                                shuffle=False, pin_memory=True)
 
-    logger.info("Training script finished")
+        network = PretrainedSiameseNetwork(pretrained=True) if args.model == 'pretrained' else SiameseNetwork()
+        trainer = Trainer(network, train_loader, val_loader, device, lr=args.lr)
+        model_timestamp = trainer.train(epochs=args.epochs, save_dir=args.save_dir)
+
+    if args.mode in ['test', 'both']:
+        if model_timestamp is None:
+            raise ValueError("--model-timestamp required for test mode")
+
+        model_path = os.path.join(args.save_dir, f'siamese_melanoma_classifier_{model_timestamp}.pt')
+        logger.info(f"Loading model from {model_path}")
+
+        network = PretrainedSiameseNetwork(pretrained=False) if args.model == 'pretrained' else SiameseNetwork()
+        network.load_state_dict(torch.load(model_path, map_location=device))
+        network.to(device)
+
+        test_dataset = TestDataset(args.test_csv, args.test_img_dir, args.ref_csv, args.ref_img_dir, args.k)
+        test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+
+        output_path = os.path.join(args.results_dir, f'predictions_{model_timestamp}.csv')
+        tester = Tester(network, test_loader, device, output_path)
+        tester.test()
+
+    logger.info("Script finished")

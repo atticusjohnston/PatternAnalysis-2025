@@ -54,3 +54,56 @@ class SiameseMelanomaClassifierDataset(Dataset):
 
         label = torch.tensor(row['pair_label'], dtype=torch.float32)
         return tuple(images), label
+
+
+class TestDataset(Dataset):
+    def __init__(self, test_csv, test_img_dir, ref_csv, ref_img_dir, k):
+        self.test_data = pd.read_csv(test_csv)
+        self.ref_data = pd.read_csv(ref_csv)
+        self.test_img_dir = test_img_dir
+        self.ref_img_dir = ref_img_dir
+        self.k = k
+
+        mean = [0.8057231307029724, 0.6201786994934082, 0.5902535915374756]
+        std = [0.0848047286272049, 0.09797607362270355, 0.1101665124297142]
+        self.transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean, std)
+        ])
+
+        self.ref_by_class = {}
+        for _, row in self.ref_data.iterrows():
+            label = row['target']
+            if label not in self.ref_by_class:
+                self.ref_by_class[label] = []
+            self.ref_by_class[label].append(row['image_name'])
+
+        for label in self.ref_by_class:
+            if len(self.ref_by_class[label]) > k:
+                self.ref_by_class[label] = self.ref_by_class[label][:k]
+
+        logger.info(f"Test images: {len(self.test_data)}")
+        logger.info(f"Classes: {len(self.ref_by_class)}")
+        logger.info(f"K per class: {k}")
+
+    def __len__(self):
+        return len(self.test_data)
+
+    def __getitem__(self, idx):
+        test_row = self.test_data.iloc[idx]
+        test_img_name = test_row['image_name']
+        test_label = test_row['target']
+
+        test_path = os.path.join(self.test_img_dir, f"{test_img_name}.jpg")
+        test_img = self.transform(Image.open(test_path).convert('RGB'))
+
+        ref_imgs = {}
+        for label, img_names in self.ref_by_class.items():
+            imgs = []
+            for img_name in img_names:
+                ref_path = os.path.join(self.ref_img_dir, f"{img_name}.jpg")
+                imgs.append(self.transform(Image.open(ref_path).convert('RGB')))
+            ref_imgs[label] = torch.stack(imgs)
+
+        return test_img, ref_imgs, test_label, test_img_name
+
