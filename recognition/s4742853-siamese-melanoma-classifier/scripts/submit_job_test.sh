@@ -38,8 +38,8 @@ ARGS="--mode $MODE \
     --val-img-dir data/cleaned/validation_images_224 \
     --test-csv data/cleaned/test.csv \
     --test-img-dir data/cleaned/test_images_224 \
-    --ref-csv data/cleaned/train.csv \
-    --ref-img-dir data/cleaned/train_images_224 \
+    --ref-csv data/cleaned/validation.csv \
+    --ref-img-dir data/cleaned/validation_images_224 \
     --batch-size $BATCH_SIZE \
     --epochs $EPOCHS \
     --lr $LR \
