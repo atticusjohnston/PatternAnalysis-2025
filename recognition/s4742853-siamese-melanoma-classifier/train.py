@@ -120,8 +120,6 @@ class Trainer:
                 avg_batch_time = elapsed / (batch_idx + 1)
                 eta = avg_batch_time * (batch_count - batch_idx - 1)
 
-                # Batch statistics
-                label_stats = f"labels[min:{labels.min():.3f}, max:{labels.max():.3f}, mean:{labels.mean():.3f}, unique:{labels.unique().numel()}]"
                 output_stats = f"outputs[min:{outputs.min():.3f}, max:{outputs.max():.3f}, mean:{outputs.mean():.3f}, std:{outputs.std():.3f}]"
 
                 # Adaptive gradient stats based on model type
@@ -140,7 +138,7 @@ class Trainer:
                 logger.info(
                     f"Epoch {epoch + 1} - Batch {batch_idx + 1}/{batch_count} - Loss: {loss.item():.4f} - ETA: {eta:.1f}s")
                 logger.debug(
-                    f"{label_stats} - {output_stats} - {grad_stats} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, xfer: {transfer_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s")
+                    f"{output_stats} - {grad_stats} - Total: {batch_time:.3f}s (data: {data_time:.3f}s, xfer: {transfer_time:.3f}s, fwd: {forward_time:.3f}s, bwd: {backward_time:.3f}s, opt: {optim_time:.3f}s) - Avg: {avg_batch_time:.3f}s")
 
             iter_start = time.time()
 
