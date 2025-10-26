@@ -67,7 +67,7 @@ class PretrainedSiameseNetwork(nn.Module):
             nn.Linear(512, 256),
             nn.LeakyReLU(0.2),
             nn.Linear(256, 128),
-            nn.Dropout(0.5)
+            nn.Dropout(0.7)
         )
 
         self.alpha = nn.Parameter(torch.ones(128) * 0.01)
