@@ -25,7 +25,7 @@ python train.py \
     --val-img-dir data/cleaned/validation_images_224 \
     --batch-size 256 \
     --epochs 1 \
-    --lr 1e-4 \
+    --lr 1e-3 \
     --save-dir models \
     --model custom \
     --log-file logs/train_$SLURM_JOB_ID.log
