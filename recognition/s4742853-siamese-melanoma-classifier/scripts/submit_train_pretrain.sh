@@ -24,7 +24,7 @@ python train.py \
     --val-csv data/cleaned/validation_pairs.csv \
     --val-img-dir data/cleaned/validation_images_224 \
     --batch-size 256 \
-    --epochs 1 \
+    --epochs 5 \
     --lr 1e-4 \
     --save-dir models \
     --model pretrained \
