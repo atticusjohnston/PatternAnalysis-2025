@@ -22,9 +22,9 @@ python train.py \
     --train-img-dir data/cleaned/train_images_224 \
     --val-csv data/cleaned/validation_pairs.csv \
     --val-img-dir data/cleaned/validation_images_224 \
-    --batch-size 256 \
+    --batch-size 512 \
     --epochs 5 \
-    --lr 1e-3 \
+    --lr 1e-5 \
     --save-dir models \
     --model pretrained \
     --log-file logs/train_$SLURM_JOB_ID.log
