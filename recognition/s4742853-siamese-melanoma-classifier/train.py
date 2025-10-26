@@ -271,21 +271,20 @@ class Tester:
 
         total_time = time.time() - start_time
 
+        correct = sum(1 for p in predictions if p['true_label'] == p['pred_label'])
+        accuracy = correct / len(predictions)
+
         true_labels = [p['true_label'] for p in predictions]
         pred_labels = [p['pred_label'] for p in predictions]
 
         cm = confusion_matrix(true_labels, pred_labels, labels=[0, 1])
 
-        logger.info("Confusion Matrix:")
-        logger.info(f"True Negative: {cm[0, 0]} | False Positive: {cm[0, 1]}")
-        logger.info(f"False Negative: {cm[1, 0]} | True Positive: {cm[1, 1]}")
-
-        correct = sum(1 for p in predictions if p['true_label'] == p['pred_label'])
-        accuracy = correct / len(predictions)
-
         logger.info(f"{'=' * 50}")
         logger.info(f"Testing completed in {total_time:.2f}s ({total_time / 60:.2f}m)")
         logger.info(f"Test Accuracy: {accuracy:.4f} ({correct}/{len(predictions)})")
+        logger.info("Confusion Matrix:")
+        logger.info(f"True Negative: {cm[0, 0]} | False Positive: {cm[0, 1]}")
+        logger.info(f"False Negative: {cm[1, 0]} | True Positive: {cm[1, 1]}")
 
         os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
         df = pd.DataFrame(predictions)
