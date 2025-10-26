@@ -15,3 +15,4 @@ squeue -u $USER -o "%.10i %.8j %.2t %.10M %.6D %R"
 sbatch scripts/submit_train_pretrain.sh
 sbatch scripts/submit_train_pretrain_test.sh
 
+sbatch scripts/submit_job.sh test pretrained 1761451246 10
