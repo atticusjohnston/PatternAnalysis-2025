@@ -117,7 +117,7 @@ class Trainer:
             loss.backward()
             backward_time = time.time() - backward_start
 
-            # Replace gradient logging section with:
+            torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1.0)
 
             # Compute gradient norms
             grad_norms = {}
