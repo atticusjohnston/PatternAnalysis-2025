@@ -120,7 +120,7 @@ class Trainer:
             total_loss += loss.item()
             batch_time = time.time() - iter_start
 
-            if batch_idx == 0 or (batch_idx + 1) % 10 == 0:
+            if (batch_idx + 1) % 10 == 0:
                 elapsed = time.time() - epoch_start
                 avg_batch_time = elapsed / (batch_idx + 1)
                 eta = avg_batch_time * (batch_count - batch_idx - 1)
