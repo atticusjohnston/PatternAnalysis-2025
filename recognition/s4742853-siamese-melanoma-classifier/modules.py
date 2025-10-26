@@ -82,12 +82,6 @@ class PretrainedSiameseNetwork(nn.Module):
         return x
 
     def forward(self, x1, x2):
-        # Debug: Check inputs
-        if torch.rand(1) < 0.01:
-            x_identical = torch.allclose(x1, x2, atol=1e-6)
-            logger.debug(f"INPUT: x1==x2: {x_identical}")
-            logger.debug(f"INPUT: x1[min:{x1.min():.3f}, max:{x1.max():.3f}, mean:{x1.mean():.3f}]")
-            logger.debug(f"INPUT: x2[min:{x2.min():.3f}, max:{x2.max():.3f}, mean:{x2.mean():.3f}]")
 
         h1 = self.forward_one(x1)
         h2 = self.forward_one(x2)
