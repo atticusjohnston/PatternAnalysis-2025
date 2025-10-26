@@ -68,6 +68,8 @@ class Trainer:
         self.optimiser = optim.Adam(network.parameters(), lr=lr)
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimiser, gamma=0.99)
         self.plotter = Plotter()
+        self.warmup_epochs = 2
+        self.base_lr = lr
 
         logger.info(f"Trainer initialized with device: {device}")
         logger.info(f"Learning rate: {lr}")
@@ -78,6 +80,12 @@ class Trainer:
         self.network.train()
         total_loss = 0
         batch_count = len(self.train_loader)
+
+        if epoch < self.warmup_epochs:
+            warmup_lr = self.base_lr * (epoch + 1) / self.warmup_epochs
+            for param_group in self.optimiser.param_groups:
+                param_group['lr'] = warmup_lr
+
         epoch_start = time.time()
         iter_start = time.time()
 
