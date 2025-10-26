@@ -95,32 +95,26 @@ class PretrainedSiameseNetwork(nn.Module):
         return x
 
     def forward(self, x1, x2):
-        def forward(self, x1, x2):
-            # Check BN running stats
-            if torch.rand(1) < 0.01:
-                for name, module in self.feature_extractor.named_modules():
-                    if isinstance(module, nn.BatchNorm2d):
-                        logger.debug(
-                            f"BN {name}: training={module.training}, running_mean={module.running_mean[:3]}, running_var={module.running_var[:3]}")
-                        break
-
-            h1 = self.forward_one(x1)
-            h2 = self.forward_one(x2)
-
         h1 = self.forward_one(x1)
         h2 = self.forward_one(x2)
 
-        # Debug: Check outputs
+        # Check if embeddings are collapsing across batch
         if torch.rand(1) < 0.01:
-            h_identical = torch.allclose(h1, h2, atol=1e-6)
-            logger.debug(f"OUTPUT: h1==h2: {h_identical}")
-            logger.debug(
-                f"OUTPUT: h1[min:{h1.min():.3f}, max:{h1.max():.3f}, mean:{h1.mean():.3f}, std:{h1.std():.3f}]")
-            logger.debug(
-                f"OUTPUT: h2[min:{h2.min():.3f}, max:{h2.max():.3f}, mean:{h2.mean():.3f}, std:{h2.std():.3f}]")
-            logger.debug(f"OUTPUT: alpha[min:{self.alpha.min():.3f}, max:{self.alpha.max():.3f}]")
+            h1_var_across_batch = h1.std(dim=0).mean().item()
+            h2_var_across_batch = h2.std(dim=0).mean().item()
+            logger.debug(f"Embedding variance across batch: h1={h1_var_across_batch:.6f}, h2={h2_var_across_batch:.6f}")
+
+            # Check pairwise distances within batch
+            pairwise_dist = torch.cdist(h1, h2, p=2).mean().item()
+            logger.debug(f"Mean pairwise distance h1 to h2: {pairwise_dist:.6f}")
 
         distance = torch.abs(h1 - h2)
         weighted_distance = torch.sum(self.alpha * distance, dim=1)
+
+        # Log weighted distance before sigmoid
+        if torch.rand(1) < 0.01:
+            logger.debug(
+                f"weighted_distance: min={weighted_distance.min():.6f}, max={weighted_distance.max():.6f}, mean={weighted_distance.mean():.6f}")
+
         p = torch.sigmoid(weighted_distance)
         return p
