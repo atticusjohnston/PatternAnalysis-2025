@@ -6,6 +6,7 @@ import torch.optim as optim
 from dataset import SiameseMelanomaClassifierDataset, TestDataset
 from modules import SiameseNetwork, PretrainedSiameseNetwork
 from torch.utils.data import DataLoader
+from sklearn.metrics import confusion_matrix
 import time
 import matplotlib.pyplot as plt
 import logging
@@ -269,6 +270,16 @@ class Tester:
                     logger.info(f"Tested {idx + 1}/{len(self.test_loader)} images")
 
         total_time = time.time() - start_time
+
+        true_labels = [p['true_label'] for p in predictions]
+        pred_labels = [p['pred_label'] for p in predictions]
+
+        cm = confusion_matrix(true_labels, pred_labels, labels=[0, 1])
+
+        logger.info("Confusion Matrix:")
+        logger.info(f"True Negative: {cm[0, 0]} | False Positive: {cm[0, 1]}")
+        logger.info(f"False Negative: {cm[1, 0]} | True Positive: {cm[1, 1]}")
+
         correct = sum(1 for p in predictions if p['true_label'] == p['pred_label'])
         accuracy = correct / len(predictions)
 
