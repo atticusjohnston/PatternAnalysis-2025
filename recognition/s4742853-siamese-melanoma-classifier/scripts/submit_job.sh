@@ -35,12 +35,10 @@ source venv/bin/activate
 ARGS="--mode $MODE \
     --train-csv data/cleaned/train_pairs.csv \
     --train-img-dir data/cleaned/train_images_224 \
-    --val-csv data/cleaned/validation_pairs.csv \
+    --val-csv data/cleaned/validation.csv \
     --val-img-dir data/cleaned/validation_images_224 \
     --test-csv data/cleaned/test.csv \
     --test-img-dir data/cleaned/test_images_224 \
-    --ref-csv data/cleaned/validation.csv \
-    --ref-img-dir data/cleaned/validation_images_224 \
     --batch-size $BATCH_SIZE \
     --epochs $EPOCHS \
     --lr $LR \

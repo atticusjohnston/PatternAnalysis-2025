@@ -37,39 +37,16 @@ def setup_logging(log_file=None):
 logger = logging.getLogger(__name__)
 
 
-class Plotter:
-    """Helper class to collect and plot training and validation losses."""
-    def __init__(self):
-        self.train_losses = []  # Stores average training loss per epoch
-        self.val_losses = []  # Stores average validation loss per epoch
-
-    def add(self, train_loss, val_loss):
-        """Records the losses for the current epoch."""
-        self.train_losses.append(float(train_loss))
-        self.val_losses.append(float(val_loss))
-
-    def plot(self, save_path):
-        """Generates and saves a plot of the loss history."""
-        plt.figure(figsize=(10, 6))
-        plt.plot(self.train_losses, label='Train Loss')
-        plt.plot(self.val_losses, label='Val Loss')
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.legend()
-        plt.savefig(save_path)
-        plt.close()
-        logger.info(f"Loss plot saved to {save_path}")
-
-
 class Trainer:
     """
     Handles the entire training lifecycle, including optimisation, validation,
     early stopping, and model saving.
     """
+
     def __init__(self,
                  network: nn.Module,
-                 train_loader: SiameseMelanomaClassifierDataset,
-                 val_loader: SiameseMelanomaClassifierDataset,
+                 train_loader: DataLoader,
+                 val_loader: DataLoader,
                  device: torch.device,
                  lr: float = 0.0001,
                  patience: int = 5
@@ -82,17 +59,16 @@ class Trainer:
         self.optimiser = optim.Adam(network.parameters(), lr=lr, weight_decay=1e-5)
         # Learning rate scheduler to gradually decay the LR
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimiser, gamma=0.99)
-        self.plotter = Plotter()
 
         self.patience = patience  # Early stopping patience
-        self.best_val_loss = float('inf')
+        self.best_val_acc = 0.0  # track accuracy
         self.patience_counter = 0  # Counter for epochs without validation improvement
 
         logger.info(f"Trainer initialised with device: {device}")
         logger.info(f"Learning rate: {lr}")
         logger.info(f"Early stopping patience: {patience}")
         logger.info(f"Training batches: {len(train_loader)}")
-        logger.info(f"Validation batches: {len(val_loader)}")
+        logger.info(f"Validation images: {len(val_loader.dataset)}")
 
     def train_epoch(self, epoch):
         """Performs a single training epoch."""
@@ -175,25 +151,54 @@ class Trainer:
         return avg_loss
 
     def validate(self, epoch):
-        """Performs validation on the validation set."""
+        """
+        Performs validation using soft top-k voting accuracy approach.
+
+        Returns:
+            float: The validation accuracy.
+        """
         self.network.eval()  # Set network to evaluation mode
-        total_loss = 0
-        batch_count = len(self.val_loader)
+        correct = 0
+        total = len(self.val_loader.dataset)
+
+        logger.info(f"Running validation...")
+        start_time = time.time()
 
         with torch.no_grad():  # Disable gradient calculations
-            for batch_idx, ((img1, img2), labels) in enumerate(self.val_loader):
-                # Move data to device
-                img1 = img1.to(self.device)
-                img2 = img2.to(self.device)
-                labels = labels.float().to(self.device)
+            for idx, (test_img, ref_imgs, true_label, img_name) in enumerate(self.val_loader):
+                # test_img shape is (1, C, H, W)
+                test_img = test_img.to(self.device)
 
-                outputs = self.network(img1, img2)
-                loss = self.criterion(outputs, labels)
-                total_loss += loss.item()
+                class_probs = {}
+                for label, ref_batch in ref_imgs.items():
+                    # ref_batch shape is (1, k, C, H, W). Squeeze the batch dim
+                    ref_batch = ref_batch.squeeze(0).to(self.device)
+                    # Repeat the single test image k times to match the ref_batch size
+                    test_batch = test_img.repeat(ref_batch.size(0), 1, 1, 1)
 
-        avg_loss = total_loss / batch_count
-        logger.info(f"Epoch {epoch + 1} - Validation complete - Avg Loss: {avg_loss:.4f}")
-        return avg_loss
+                    # Get the probabilities that the test image matches each reference image
+                    probs = self.network(test_batch, ref_batch)
+
+                    # Get the mean probability of matching the top-3 references
+                    k = min(3, len(probs))
+                    top_k_probs = probs.topk(k=k).values
+                    class_probs[label] = top_k_probs.mean().item()
+
+                # The predicted class is the one with the highest mean probability
+                pred_label = max(class_probs, key=class_probs.get)
+
+                if pred_label == true_label.item():
+                    correct += 1
+
+                if (idx + 1) % 50 == 0:
+                    logger.info(f"Validated {idx + 1}/{total} images")
+
+        accuracy = correct / total
+        val_time = time.time() - start_time
+
+        logger.info(
+            f"Epoch {epoch + 1} - Validation complete - Accuracy: {accuracy:.4f} ({correct}/{total}) - Time: {val_time:.2f}s")
+        return accuracy
 
     def train(self, epochs, save_dir):
         """
@@ -215,15 +220,14 @@ class Trainer:
             logger.info(f"Epoch {epoch + 1}/{epochs}")
 
             train_loss = self.train_epoch(epoch)
-            val_loss = self.validate(epoch)
-            self.plotter.add(train_loss, val_loss)
+            val_acc = self.validate(epoch)
 
             # Early stopping and model saving logic
-            if val_loss < self.best_val_loss:
-                self.best_val_loss = val_loss
+            if val_acc > self.best_val_acc:
+                self.best_val_acc = val_acc
                 self.patience_counter = 0
                 torch.save(self.network.state_dict(), model_path)  # Save the best model
-                logger.info(f"New best validation loss: {val_loss:.4f} - Model saved")
+                logger.info(f"New best validation accuracy: {val_acc:.4f} - Model saved")
             else:
                 self.patience_counter += 1
 
@@ -243,17 +247,15 @@ class Trainer:
         total_time = time.time() - start_time
         logger.info(f"{'=' * 50}")
         logger.info(f"Training completed in {total_time:.2f}s ({total_time / 60:.2f}m)")
+        logger.info(f"Best validation accuracy: {self.best_val_acc:.4f}")
         logger.info(f"Best model saved to {model_path}")
-
-        # Save the loss plot
-        plot_path = os.path.join(save_dir, f'siamese_melanoma_classifier_{timestamp}_loss.png')
-        self.plotter.plot(plot_path)
 
         return timestamp
 
 
 class Tester:
-    """Handles the testing phase using the k-nearest neighbor (k-NN) approach."""
+    """Handles the testing phase using the soft top-k voting approach."""
+
     def __init__(self,
                  network: nn.Module,
                  test_loader: TestDataset,
@@ -350,18 +352,14 @@ def parse_args():
                         help="Path to the training pairs CSV.")
     parser.add_argument('--train-img-dir', type=str, default='data/cleaned/train_images_224',
                         help="Directory containing training images.")
-    parser.add_argument('--val-csv', type=str, default='data/cleaned/validation_pairs.csv',
-                        help="Path to the validation pairs CSV.")
+    parser.add_argument('--val-csv', type=str, default='data/cleaned/validation.csv',
+                        help="Path to the validation CSV (images to validate).")
     parser.add_argument('--val-img-dir', type=str, default='data/cleaned/validation_images_224',
                         help="Directory containing validation images.")
     parser.add_argument('--test-csv', type=str, default='data/cleaned/test.csv',
                         help="Path to the test image CSV.")
     parser.add_argument('--test-img-dir', type=str, default='data/cleaned/test_images_224',
                         help="Directory containing test images.")
-    parser.add_argument('--ref-csv', type=str, default='data/cleaned/train.csv',
-                        help="Path to the reference images CSV.")
-    parser.add_argument('--ref-img-dir', type=str, default='data/cleaned/train_images_224',
-                        help="Directory containing reference images.")
     parser.add_argument('--batch-size', type=int, default=512,
                         help="Training batch size.")
     parser.add_argument('--epochs', type=int, default=10,
@@ -369,7 +367,7 @@ def parse_args():
     parser.add_argument('--lr', type=float, default=1e-3,
                         help="Initial learning rate.")
     parser.add_argument('--k', type=int, default=10,
-                        help="Number of reference images per class for testing.")
+                        help="Number of reference images per class for validation and testing.")
     parser.add_argument('--save-dir', type=str, default='models',
                         help="Directory to save model checkpoints.")
     parser.add_argument('--results-dir', type=str, default='results',
@@ -413,15 +411,17 @@ if __name__ == "__main__":
     model_timestamp = args.model_timestamp
 
     if args.mode in ['train', 'both']:
-        # Setup training and validation datasets and loaders
+        # Setup training dataset and loader
         train_dataset = SiameseMelanomaClassifierDataset(args.train_csv, args.train_img_dir, mode='train')
-        val_dataset = SiameseMelanomaClassifierDataset(args.val_csv, args.val_img_dir, mode='val')
+
+        # Setup validation dataset using TestDataset with test images as references
+        val_dataset = TestDataset(args.val_csv, args.val_img_dir, args.test_csv, args.test_img_dir, args.k)
 
         # Configure DataLoaders with multiprocessing and memory pinning
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True,
                                   shuffle=True, pin_memory=True)
-        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True,
-                                shuffle=False, pin_memory=True)
+        # Validation loader uses batch_size=1 like test loader
+        val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
 
         # Initialise the network
         network = PretrainedSiameseNetwork(pretrained=True) if args.model == 'pretrained' else SiameseNetwork()
@@ -443,7 +443,7 @@ if __name__ == "__main__":
         network.to(device)
 
         # Setup test dataset and loader
-        test_dataset = TestDataset(args.test_csv, args.test_img_dir, args.ref_csv, args.ref_img_dir, args.k)
+        test_dataset = TestDataset(args.test_csv, args.test_img_dir, args.val_csv, args.val_img_dir, args.k)
         # Batch size of 1 for TestDataset
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
