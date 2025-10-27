@@ -60,9 +60,10 @@ class Trainer:
         # Learning rate scheduler to gradually decay the LR
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimiser, gamma=0.99)
 
-        self.patience = patience  # Early stopping patience
-        self.best_val_acc = 0.0  # track accuracy
-        self.patience_counter = 0  # Counter for epochs without validation improvement
+        self.patience = patience
+        self.best_val_acc = 0.0
+        self.best_balanced_acc = 0.0
+        self.patience_counter = 0
 
         logger.info(f"Trainer initialised with device: {device}")
         logger.info(f"Learning rate: {lr}")
@@ -155,16 +156,20 @@ class Trainer:
         Performs validation using soft top-k voting accuracy approach.
 
         Returns:
-            float: The validation accuracy.
+            tuple: (accuracy, balanced_accuracy)
         """
-        self.network.eval()  # Set network to evaluation mode
+        self.network.eval()
         correct = 0
         total = len(self.val_loader.dataset)
+
+        # Track per-class predictions for balanced accuracy
+        predictions = []
+        true_labels = []
 
         logger.info(f"Running validation...")
         start_time = time.time()
 
-        with torch.no_grad():  # Disable gradient calculations
+        with torch.no_grad():
             for idx, (test_img, ref_imgs, true_label, img_name) in enumerate(self.val_loader):
                 # test_img shape is (1, C, H, W)
                 test_img = test_img.to(self.device)
@@ -186,6 +191,8 @@ class Trainer:
 
                 # The predicted class is the one with the highest mean probability
                 pred_label = max(class_probs, key=class_probs.get)
+                predictions.append(pred_label)
+                true_labels.append(true_label.item())
 
                 if pred_label == true_label.item():
                     correct += 1
@@ -194,11 +201,20 @@ class Trainer:
                     logger.info(f"Validated {idx + 1}/{total} images")
 
         accuracy = correct / total
+
+        # Compute per-class recalls for balanced accuracy
+        cm = confusion_matrix(true_labels, predictions, labels=[0, 1])
+        recall_0 = cm[0, 0] / (cm[0, 0] + cm[0, 1]) if (cm[0, 0] + cm[0, 1]) > 0 else 0
+        recall_1 = cm[1, 1] / (cm[1, 0] + cm[1, 1]) if (cm[1, 0] + cm[1, 1]) > 0 else 0
+        balanced_accuracy = (recall_0 + recall_1) / 2
+
         val_time = time.time() - start_time
 
         logger.info(
-            f"Epoch {epoch + 1} - Validation complete - Accuracy: {accuracy:.4f} ({correct}/{total}) - Time: {val_time:.2f}s")
-        return accuracy
+            f"Epoch {epoch + 1} - Validation complete - Accuracy: {accuracy:.4f} ({correct}/{total}) - Balanced Acc: {balanced_accuracy:.4f} - Time: {val_time:.2f}s")
+        logger.info(f"Per-class Recall - Class 0: {recall_0:.4f}, Class 1: {recall_1:.4f}")
+
+        return accuracy, balanced_accuracy
 
     def train(self, epochs, save_dir):
         """
@@ -220,14 +236,15 @@ class Trainer:
             logger.info(f"Epoch {epoch + 1}/{epochs}")
 
             train_loss = self.train_epoch(epoch)
-            val_acc = self.validate(epoch)
+            val_acc, balanced_acc = self.validate(epoch)
 
-            # Early stopping and model saving logic
-            if val_acc > self.best_val_acc:
+            # Early stopping based on balanced accuracy
+            if balanced_acc > self.best_balanced_acc:
+                self.best_balanced_acc = balanced_acc
                 self.best_val_acc = val_acc
                 self.patience_counter = 0
-                torch.save(self.network.state_dict(), model_path)  # Save the best model
-                logger.info(f"New best validation accuracy: {val_acc:.4f} - Model saved")
+                torch.save(self.network.state_dict(), model_path)
+                logger.info(f"New best balanced accuracy: {balanced_acc:.4f} (acc: {val_acc:.4f}) - Model saved")
             else:
                 self.patience_counter += 1
 
@@ -248,6 +265,7 @@ class Trainer:
         logger.info(f"{'=' * 50}")
         logger.info(f"Training completed in {total_time:.2f}s ({total_time / 60:.2f}m)")
         logger.info(f"Best validation accuracy: {self.best_val_acc:.4f}")
+        logger.info(f"Best balanced accuracy: {self.best_balanced_acc:.4f}")
         logger.info(f"Best model saved to {model_path}")
 
         return timestamp
@@ -327,12 +345,18 @@ class Tester:
         # Compute confusion matrix
         cm = confusion_matrix(true_labels, pred_labels, labels=[0, 1])
 
+        recall_0 = cm[0, 0] / (cm[0, 0] + cm[0, 1]) if (cm[0, 0] + cm[0, 1]) > 0 else 0
+        recall_1 = cm[1, 1] / (cm[1, 0] + cm[1, 1]) if (cm[1, 0] + cm[1, 1]) > 0 else 0
+        balanced_accuracy = (recall_0 + recall_1) / 2
+
         logger.info(f"{'=' * 50}")
         logger.info(f"Testing completed in {total_time:.2f}s ({total_time / 60:.2f}m)")
         logger.info(f"Test Accuracy: {accuracy:.4f} ({correct}/{len(predictions)})")
+        logger.info(f"Test Balanced Accuracy: {balanced_accuracy:.4f}")
         logger.info("Confusion Matrix:")
         logger.info(f"True Negative: {cm[0, 0]} | False Positive: {cm[0, 1]}")
         logger.info(f"False Negative: {cm[1, 0]} | True Positive: {cm[1, 1]}")
+        logger.info(f"Per-class Recall - Class 0: {recall_0:.4f}, Class 1: {recall_1:.4f}")
 
         # Save predictions to CSV
         os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
