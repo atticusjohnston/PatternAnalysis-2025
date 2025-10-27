@@ -36,7 +36,7 @@ class SiameseNetwork(nn.Module):
         # Learnable weight vector (alpha) for weighted distance calculation
         self.alpha = nn.Parameter(torch.ones(512) * 0.01)
 
-        logger.info("Initialized SiameseNetwork with custom architecture")
+        logger.info("Initialised SiameseNetwork with custom architecture")
 
     def forward_one(self, x):
         """
@@ -130,7 +130,7 @@ class PretrainedSiameseNetwork(nn.Module):
         for param in self.feature_extractor.parameters():
             param.requires_grad = True
 
-        logger.info(f"Initialized PretrainedSiameseNetwork (pretrained={pretrained})")
+        logger.info(f"Initialised PretrainedSiameseNetwork (pretrained={pretrained})")
 
     def forward_one(self, x):
         """

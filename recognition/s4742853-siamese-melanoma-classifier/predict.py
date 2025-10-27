@@ -7,14 +7,13 @@ import os
 from modules import SiameseNetwork, PretrainedSiameseNetwork
 
 
-def predict(model_path, image_path, ref_csv, ref_img_dir, k=10, model_type='pretrained'):
+def predict(model_path: str, image_path: str, ref_csv: str, ref_img_dir: str, k: int = 10, model_type: str = 'pretrained') -> tuple:
     device = torch.device(
-        "mps" if torch.mps.is_available()
+        "mps" if torch.backends.mps.is_available()
         else "cuda" if torch.cuda.is_available()
         else "cpu"
     )
 
-    # Load model
     if model_type == 'pretrained':
         network = PretrainedSiameseNetwork(pretrained=False)
     else:
@@ -24,7 +23,6 @@ def predict(model_path, image_path, ref_csv, ref_img_dir, k=10, model_type='pret
     network.to(device)
     network.eval()
 
-    # Setup transforms
     mean = [0.8057231307029724, 0.6201786994934082, 0.5902535915374756]
     std = [0.0848047286272049, 0.09797607362270355, 0.1101665124297142]
     transform = transforms.Compose([
@@ -32,11 +30,9 @@ def predict(model_path, image_path, ref_csv, ref_img_dir, k=10, model_type='pret
         transforms.Normalize(mean, std)
     ])
 
-    # Load test image
     test_img = Image.open(image_path).convert('RGB')
     test_img = transform(test_img).unsqueeze(0).to(device)
 
-    # Load reference images
     ref_data = pd.read_csv(ref_csv)
     ref_by_class = {}
 
@@ -50,7 +46,6 @@ def predict(model_path, image_path, ref_csv, ref_img_dir, k=10, model_type='pret
         if len(ref_by_class[label]) > k:
             ref_by_class[label] = ref_by_class[label][:k]
 
-    # Compare against reference images
     class_probs = {}
 
     with torch.no_grad():
@@ -66,8 +61,8 @@ def predict(model_path, image_path, ref_csv, ref_img_dir, k=10, model_type='pret
 
             probs = network(test_batch, ref_batch)
 
-            top_k = min(3, len(probs))
-            top_k_probs = probs.topk(k=top_k).values
+            top_k_to_use = min(3, len(probs))
+            top_k_probs = probs.topk(k=top_k_to_use).values
             class_probs[label] = top_k_probs.mean().item()
 
     pred_class = max(class_probs, key=class_probs.get)
@@ -77,14 +72,20 @@ def predict(model_path, image_path, ref_csv, ref_img_dir, k=10, model_type='pret
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', type=str, required=True)
-    parser.add_argument('--image-path', type=str, required=True)
-    parser.add_argument('--ref-csv', type=str, required=True)
-    parser.add_argument('--ref-img-dir', type=str, required=True)
-    parser.add_argument('--k', type=int, default=10)
+    parser = argparse.ArgumentParser(description="Siamese Network single image prediction.")
+    parser.add_argument('--model-path', type=str, required=True,
+                        help="Path to the saved model state dictionary (.pt file).")
+    parser.add_argument('--image-path', type=str, required=True,
+                        help="Path to the single image file to classify.")
+    parser.add_argument('--ref-csv', type=str, required=True,
+                        help="CSV file containing reference image names and labels.")
+    parser.add_argument('--ref-img-dir', type=str, required=True,
+                        help="Directory containing the reference image files.")
+    parser.add_argument('--k', type=int, default=10,
+                        help="Number of reference images per class to use for k-NN comparison.")
     parser.add_argument('--model-type', type=str, default='pretrained',
-                        choices=['pretrained', 'custom'])
+                        choices=['pretrained', 'custom'],
+                        help="Specify the model architecture ('pretrained' or 'custom').")
 
     args = parser.parse_args()
 
@@ -97,8 +98,10 @@ if __name__ == "__main__":
         args.model_type
     )
 
+    print("--- Prediction Results ---")
+    print(f"Input Image: {args.image_path}")
     print(f"Predicted Class: {pred_class}")
-    print(f"Probability: {pred_prob:.4f}")
-    print(f"\nClass Probabilities:")
+    print(f"Confidence: {pred_prob:.4f}")
+    print("\nClass Probabilities:")
     for label, prob in sorted(all_probs.items()):
         print(f"  Class {label}: {prob:.4f}")

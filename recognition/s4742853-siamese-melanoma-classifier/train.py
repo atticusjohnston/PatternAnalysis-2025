@@ -63,7 +63,7 @@ class Plotter:
 
 class Trainer:
     """
-    Handles the entire training lifecycle, including optimization, validation,
+    Handles the entire training lifecycle, including optimisation, validation,
     early stopping, and model saving.
     """
     def __init__(self,
@@ -88,7 +88,7 @@ class Trainer:
         self.best_val_loss = float('inf')
         self.patience_counter = 0  # Counter for epochs without validation improvement
 
-        logger.info(f"Trainer initialized with device: {device}")
+        logger.info(f"Trainer initialised with device: {device}")
         logger.info(f"Learning rate: {lr}")
         logger.info(f"Early stopping patience: {patience}")
         logger.info(f"Training batches: {len(train_loader)}")
@@ -265,7 +265,7 @@ class Tester:
         self.device = device
         self.output_path = output_path
 
-        logger.info(f"Tester initialized with device: {device}")
+        logger.info(f"Tester initialised with device: {device}")
         logger.info(f"Test batches: {len(test_loader)}")
 
     def test(self):
@@ -423,7 +423,7 @@ if __name__ == "__main__":
         val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=8, persistent_workers=True,
                                 shuffle=False, pin_memory=True)
 
-        # Initialize the network
+        # Initialise the network
         network = PretrainedSiameseNetwork(pretrained=True) if args.model == 'pretrained' else SiameseNetwork()
         trainer = Trainer(network, train_loader, val_loader, device, lr=args.lr)
         # Start training and get the unique timestamp for the best model
@@ -437,7 +437,7 @@ if __name__ == "__main__":
         model_path = os.path.join(args.save_dir, f'siamese_melanoma_classifier_{model_timestamp}.pt')
         logger.info(f"Loading model from {model_path}")
 
-        # Initialize the network
+        # Initialise the network
         network = PretrainedSiameseNetwork(pretrained=False) if args.model == 'pretrained' else SiameseNetwork()
         network.load_state_dict(torch.load(model_path, map_location=device))
         network.to(device)
@@ -447,7 +447,7 @@ if __name__ == "__main__":
         # Batch size of 1 for TestDataset
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-        # Initialize and run the tester
+        # Initialise and run the tester
         output_path = os.path.join(args.results_dir, f'predictions_{model_timestamp}.csv')
         tester = Tester(network, test_loader, device, output_path)
         tester.test()

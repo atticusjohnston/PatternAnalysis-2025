@@ -16,7 +16,7 @@ class SiameseMelanomaClassifierDataset(Dataset):
     """
     def __init__(self, pairs_csv_path, img_dir, mode):
         """
-        Initializes the dataset.
+        Initialises the dataset.
 
         Args:
             pairs_csv_path (str): Path to the CSV file containing image pair information.
@@ -37,7 +37,7 @@ class SiameseMelanomaClassifierDataset(Dataset):
     @staticmethod
     def _build_transforms(mode):
         """Helper function to define transformation based on mode."""
-        # Pre-calculated mean and std of train set for normalization
+        # Pre-calculated mean and std of train set for normalisation
         mean = [0.8057231307029724, 0.6201786994934082, 0.5902535915374756]
         std = [0.0848047286272049, 0.09797607362270355, 0.1101665124297142]
 
@@ -51,7 +51,7 @@ class SiameseMelanomaClassifierDataset(Dataset):
                 transforms.Normalize(mean, std)
             ])
         elif mode == 'val':
-            # Only normalization for validation
+            # Only normalisation for validation
             return transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean, std)
@@ -87,7 +87,7 @@ class TestDataset(Dataset):
     """
     def __init__(self, test_csv, test_img_dir, ref_csv, ref_img_dir, k):
         """
-        Initializes the test dataset.
+        Initialises the test dataset.
 
         Args:
             test_csv (str): Path to the CSV with test image names and true labels.
@@ -102,7 +102,7 @@ class TestDataset(Dataset):
         self.ref_img_dir = ref_img_dir
         self.k = k
 
-        # Define standard normalization-only transform
+        # Define standard normalisation-only transform
         mean = [0.8057231307029724, 0.6201786994934082, 0.5902535915374756]
         std = [0.0848047286272049, 0.09797607362270355, 0.1101665124297142]
         self.transform = transforms.Compose([
