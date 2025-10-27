@@ -258,7 +258,7 @@ class Tester:
 
                     probs = self.network(test_batch, ref_batch)
 
-                    k = min(5, len(probs))
+                    k = min(3, len(probs))
                     top_k_probs = probs.topk(k=k).values
                     class_probs[label] = top_k_probs.mean().item()
 
