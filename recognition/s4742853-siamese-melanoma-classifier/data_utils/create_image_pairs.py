@@ -48,7 +48,7 @@ def create_pairs(csv_path, output_path, seed=42):
 if __name__ == '__main__':
     base_path = Path('../data/cleaned')
 
-    for split in ['train', 'validation']:
+    for split in ['train']:
         create_pairs(
             base_path / f'{split}.csv',
             base_path / f'{split}_pairs.csv'
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     print("BALANCE CHECK")
     print("=" * 50)
 
-    for split in ['train', 'validation']:
+    for split in ['train']:
         df = pd.read_csv(f'../data/cleaned/{split}_pairs.csv')
         counts = df['pair_label'].value_counts()
         pct = df['pair_label'].value_counts(normalize=True) * 100
