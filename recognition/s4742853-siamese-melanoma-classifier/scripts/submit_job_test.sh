@@ -6,8 +6,6 @@
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=atticus.johnston@student.uq.edu.au
 
 MODE=${1:-train}
 BATCH_SIZE=${2:-512}
