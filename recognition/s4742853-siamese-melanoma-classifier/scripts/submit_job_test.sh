@@ -12,7 +12,7 @@
 MODE=${1:-train}
 BATCH_SIZE=${2:-512}
 EPOCHS=${3:-10}
-LR=${4:-1e-5}
+LR=${4:-1e-3}
 MODEL=${5:-pretrained}
 MODEL_TIMESTAMP=${6:-}
 K=${7:-10}
