@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=melanoma
 #SBATCH --partition=a100
-#SBATCH --output=logs/job_%j.out
-#SBATCH --error=logs/job_%j.err
+#SBATCH --output=logs/%j.out
+#SBATCH --error=logs/%j.err
 #SBATCH --time=4:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
@@ -44,7 +44,7 @@ ARGS="--mode $MODE \
     --save-dir models \
     --results-dir results \
     --model $MODEL \
-    --log-file logs/${MODE}_$SLURM_JOB_ID.log"
+    --log-file logs/$SLURM_JOB_ID.log"
 
 if [ -n "$MODEL_TIMESTAMP" ]; then
     ARGS="$ARGS --model-timestamp $MODEL_TIMESTAMP"

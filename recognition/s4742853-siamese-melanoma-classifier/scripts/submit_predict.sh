@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=melanoma-predict
 #SBATCH --partition=a100-test
-#SBATCH --output=logs/predict_%j.out
-#SBATCH --error=logs/predict_%j.err
+#SBATCH --output=logs/%j.out
+#SBATCH --error=logs/%j.err
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:1
