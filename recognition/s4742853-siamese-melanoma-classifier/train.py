@@ -257,7 +257,10 @@ class Tester:
                     test_batch = test_img.repeat(ref_batch.size(0), 1, 1, 1)
 
                     probs = self.network(test_batch, ref_batch)
-                    class_probs[label] = probs.mean().item()
+
+                    k = min(5, len(probs))
+                    top_k_probs = probs.topk(k=k).values
+                    class_probs[label] = top_k_probs.mean().item()
 
                 pred_label = max(class_probs, key=class_probs.get)
                 predictions.append({
