@@ -179,8 +179,8 @@ class Trainer:
                     # Get the probabilities that the test image matches each reference image
                     probs = self.network(test_batch, ref_batch)
 
-                    # Get the mean probability of matching the top-3 references
-                    k = min(3, len(probs))
+                    # Get the mean probability of matching the top-5 references
+                    k = min(5, len(probs))
                     top_k_probs = probs.topk(k=k).values
                     class_probs[label] = top_k_probs.mean().item()
 
@@ -383,9 +383,9 @@ def parse_args():
 
 if __name__ == "__main__":
     # Set seeds for reproducibility
-    torch.manual_seed(42)
+    torch.manual_seed(2025)
     if torch.cuda.is_available():
-        torch.cuda.manual_seed(42)
+        torch.cuda.manual_seed(2025)
 
     args = parse_args()
 
