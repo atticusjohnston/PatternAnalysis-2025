@@ -111,7 +111,7 @@ class PretrainedSiameseNetwork(nn.Module):
         super(PretrainedSiameseNetwork, self).__init__()
 
         # Load ResNet-18 and use its weights
-        resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT)
+        resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT if pretrained else None)
         # Use all layers except the final classification layer
         self.feature_extractor = nn.Sequential(*list(resnet.children())[:-1])
 
