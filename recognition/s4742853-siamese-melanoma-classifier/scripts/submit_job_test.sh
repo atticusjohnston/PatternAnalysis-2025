@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=melanoma_test
+#SBATCH --job-name=melanoma-test
 #SBATCH --partition=a100-test
 #SBATCH --output=logs/job_%j.out
 #SBATCH --error=logs/job_%j.err
@@ -12,7 +12,7 @@
 MODE=${1:-train}
 BATCH_SIZE=${2:-512}
 EPOCHS=${3:-10}
-LR=${4:-1e-3}
+LR=${4:-1e-5}
 MODEL=${5:-pretrained}
 MODEL_TIMESTAMP=${6:-}
 K=${7:-10}
@@ -34,12 +34,10 @@ source venv/bin/activate
 ARGS="--mode $MODE \
     --train-csv data/cleaned/train_pairs.csv \
     --train-img-dir data/cleaned/train_images_224 \
-    --val-csv data/cleaned/validation_pairs.csv \
+    --val-csv data/cleaned/validation.csv \
     --val-img-dir data/cleaned/validation_images_224 \
     --test-csv data/cleaned/test.csv \
     --test-img-dir data/cleaned/test_images_224 \
-    --ref-csv data/cleaned/validation.csv \
-    --ref-img-dir data/cleaned/validation_images_224 \
     --batch-size $BATCH_SIZE \
     --epochs $EPOCHS \
     --lr $LR \
