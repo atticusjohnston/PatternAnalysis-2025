@@ -28,7 +28,7 @@ def setup_logging(log_file=None):
         handlers.append(logging.FileHandler(log_file))  # Log to file
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=handlers
     )
@@ -197,7 +197,7 @@ class Trainer:
                 if pred_label == true_label.item():
                     correct += 1
 
-                if (idx + 1) % 50 == 0:
+                if (idx + 1) % 200 == 0:
                     logger.info(f"Validated {idx + 1}/{total} images")
 
         accuracy = correct / total
