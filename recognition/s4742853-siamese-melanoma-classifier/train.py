@@ -117,7 +117,7 @@ class Trainer:
             batch_time = time.time() - iter_start
 
             # Logging updates every 10 batches
-            if (batch_idx + 1) % 400 == 0:
+            if (batch_idx + 1) % 200 == 0:
                 elapsed = time.time() - epoch_start
                 avg_batch_time = elapsed / (batch_idx + 1)
                 eta = avg_batch_time * (batch_count - batch_idx - 1)
@@ -197,7 +197,7 @@ class Trainer:
                 if pred_label == true_label.item():
                     correct += 1
 
-                if (idx + 1) % 200 == 0:
+                if (idx + 1) % 1000 == 0:
                     logger.info(f"Validated {idx + 1}/{total} images")
 
         accuracy = correct / total
@@ -330,7 +330,7 @@ class Tester:
                     'pred_label': pred_label
                 })
 
-                if (idx + 1) % 400 == 0:
+                if (idx + 1) % 1000 == 0:
                     logger.info(f"Tested {idx + 1}/{len(self.test_loader)} images")
 
         total_time = time.time() - start_time
