@@ -11,25 +11,31 @@ def create_pairs(csv_path, output_path, seed=42):
     class_0 = df[df['target'] == 0]['image_name'].values
     class_1 = df[df['target'] == 1]['image_name'].values
 
-    # Calculate numbers for 50/50 split
-    max_same = min(len(class_0) * (len(class_0) - 1) // 2,
-                   len(class_1) * (len(class_1) - 1) // 2)
-    max_diff = len(class_0) * len(class_1)
+    target_appearances = 30
+    n_same_per_class = len(class_0) * target_appearances // 2  # class 0 pairs
+    n_same_class_1 = len(class_1) * target_appearances // 2    # class 1 pairs
+    n_diff = n_same_per_class + n_same_class_1  # balance with different pairs
 
-    n_same = min(max_same, max_diff)
-    n_diff = n_same
+    print(f"Class 0 same pairs: {n_same_per_class}")
+    print(f"Class 1 same pairs: {n_same_class_1}")
+    print(f"Different pairs: {n_diff}")
 
-    print(f"Generating {n_same} same pairs, {n_diff} different pairs")
-
-    # Same pairs - sample randomly from each class
+    # Same pairs - class 0 (with replacement)
     same_pairs = []
-    for cls, label in [(class_0, 0), (class_1, 1)]:
-        pairs_needed = n_same // 2
-        for _ in range(pairs_needed):
-            idx1, idx2 = np.random.choice(len(cls), size=2, replace=False)
-            same_pairs.append([cls[idx1], cls[idx2], label, label, 1])
+    for _ in range(n_same_per_class):
+        idx1, idx2 = np.random.choice(len(class_0), size=2, replace=True)
+        while idx1 == idx2:  # avoid self-pairs
+            idx2 = np.random.choice(len(class_0))
+        same_pairs.append([class_0[idx1], class_0[idx2], 0, 0, 1])
 
-    # Different pairs
+    # Same pairs - class 1 (with replacement)
+    for _ in range(n_same_class_1):
+        idx1, idx2 = np.random.choice(len(class_1), size=2, replace=True)
+        while idx1 == idx2:
+            idx2 = np.random.choice(len(class_1))
+        same_pairs.append([class_1[idx1], class_1[idx2], 1, 1, 1])
+
+    # Different pairs - balanced cross-class
     diff_pairs = []
     indices_0 = np.random.choice(len(class_0), size=n_diff, replace=True)
     indices_1 = np.random.choice(len(class_1), size=n_diff, replace=True)
@@ -41,7 +47,8 @@ def create_pairs(csv_path, output_path, seed=42):
 
     df_pairs = pd.DataFrame(pairs, columns=['image_1', 'image_2', 'image_1_label', 'image_2_label', 'pair_label'])
     df_pairs.to_csv(output_path, index=False)
-    print(f"Saved {len(same_pairs)} same, {len(diff_pairs)} different")
+    print(f"Total pairs: {len(pairs)}")
+    print(f"Pair balance: {len(same_pairs)} same, {len(diff_pairs)} different")
     print("—")
 
 
