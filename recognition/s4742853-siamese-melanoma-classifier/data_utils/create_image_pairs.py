@@ -11,7 +11,7 @@ def create_pairs(csv_path, output_path, seed=42):
     class_0 = df[df['target'] == 0]['image_name'].values
     class_1 = df[df['target'] == 1]['image_name'].values
 
-    target_appearances = 30
+    target_appearances = 15
     n_same_per_class = len(class_0) * target_appearances // 2  # class 0 pairs
     n_same_class_1 = len(class_1) * target_appearances // 2    # class 1 pairs
     n_diff = n_same_per_class + n_same_class_1  # balance with different pairs
