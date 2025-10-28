@@ -28,7 +28,7 @@ def setup_logging(log_file=None):
         handlers.append(logging.FileHandler(log_file))  # Log to file
 
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=handlers
     )
@@ -318,7 +318,7 @@ class Tester:
                     probs = self.network(test_batch, ref_batch)
 
                     # Get the mean probability of matching the top-3 references
-                    k = min(3, len(probs))
+                    k = min(5, len(probs))
                     top_k_probs = probs.topk(k=k).values
                     class_probs[label] = top_k_probs.mean().item()
 
