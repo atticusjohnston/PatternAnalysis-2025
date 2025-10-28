@@ -17,3 +17,5 @@ sbatch scripts/submit_job.sh both 512 10 1e-3 pretrained "" 10
 sbatch scripts/submit_job_test.sh test 512 10 1e-3 pretrained <timestamp> 10
 
 ls -lt logs/
+find logs/ -type f -mtime +30 -exec rm -f {} \;
+

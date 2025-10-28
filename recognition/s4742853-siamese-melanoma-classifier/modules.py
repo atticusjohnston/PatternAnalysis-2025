@@ -120,7 +120,7 @@ class PretrainedSiameseNetwork(nn.Module):
             nn.Linear(512, 256),  # ResNet18 features are 512 after AvgPool
             nn.LeakyReLU(0.2),
             nn.Linear(256, 128),  # Final embedding dimension
-            nn.Dropout(0.7)
+            nn.Dropout(0.5)
         )
 
         # Learnable weight vector (alpha) for weighted distance calculation
