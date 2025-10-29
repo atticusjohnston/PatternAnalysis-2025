@@ -20,7 +20,7 @@ def create_pairs(csv_path, output_path, seed=42):
     print(f"Class 1 same pairs: {n_same_class_1}")
     print(f"Different pairs: {n_diff}")
 
-    # Same pairs - class 0 (with replacement)
+    # Same pairs - class 1 (with replacement)
     same_pairs = []
     for _ in range(n_same_per_class):
         idx1, idx2 = np.random.choice(len(class_0), size=2, replace=True)
@@ -28,7 +28,7 @@ def create_pairs(csv_path, output_path, seed=42):
             idx2 = np.random.choice(len(class_0))
         same_pairs.append([class_0[idx1], class_0[idx2], 0, 0, 1])
 
-    # Same pairs - class 1 (with replacement)
+    # Same pairs - class 0 (with replacement)
     for _ in range(n_same_class_1):
         idx1, idx2 = np.random.choice(len(class_1), size=2, replace=True)
         while idx1 == idx2:

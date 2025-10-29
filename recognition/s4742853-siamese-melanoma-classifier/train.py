@@ -317,10 +317,12 @@ class Tester:
                     # Get the probabilities that the test image matches each reference image
                     probs = self.network(test_batch, ref_batch)
 
-                    # Get the mean probability of matching the top-3 references
-                    k = min(5, len(probs))
-                    top_k_probs = probs.topk(k=k).values
-                    class_probs[label] = top_k_probs.mean().item()
+                    # # Get the mean probability of matching the top-3 references
+                    # k = min(5, len(probs))
+                    # top_k_probs = probs.topk(k=k).values
+                    # class_probs[label] = top_k_probs.mean().item()
+
+                    class_probs[label] = probs.mean().item()  # no topk
 
                 # The predicted class is the one with the highest mean probability
                 pred_label = max(class_probs, key=class_probs.get)
