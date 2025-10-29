@@ -45,10 +45,15 @@ class SiameseMelanomaClassifierDataset(Dataset):
             # Apply data augmentation for training
             return transforms.Compose([
                 transforms.RandomHorizontalFlip(),
+                transforms.RandomVerticalFlip(),
                 transforms.RandomRotation(20),
+                transforms.RandomAffine(degrees=0, translate=(0.1, 0.1), scale=(0.8, 1.2), shear=10),
+                transforms.RandomPerspective(distortion_scale=0.2, p=0.3),
                 transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+                transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
                 transforms.ToTensor(),
-                transforms.Normalize(mean, std)
+                transforms.Normalize(mean, std),
+                transforms.RandomErasing(p=0.3, scale=(0.02, 0.15))  # after ToTensor
             ])
         elif mode == 'val':
             # Only normalisation for validation
