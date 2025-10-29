@@ -117,7 +117,7 @@ class PretrainedSiameseNetwork(nn.Module):
 
         # Custom fully connected head
         self.fc = nn.Sequential(
-            nn.Linear(512, 256),  # ResNet18 features are 512 after AvgPool
+            nn.Linear(512, 256),  # ResNet18 features are 512
             nn.LeakyReLU(0.2),
             nn.Linear(256, 128),  # Final embedding dimension
             nn.Dropout(0.5)
