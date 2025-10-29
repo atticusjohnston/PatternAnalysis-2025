@@ -269,7 +269,7 @@ The testing procedure uses a soft top-k voting scheme rather than direct classif
 - Class 1 (melanoma): [PLACEHOLDER]%
 
 **Analysis:**
-[PLACEHOLDER]
+[PLACEHOLDER - Analysis will be added after final test results]
 
 **Clinical Context:** Higher false positive rate is acceptable in melanoma screening. Better to flag suspicious lesions for expert review than miss malignant cases.
 
@@ -313,17 +313,26 @@ s4742853-siamese-melanoma-classifier/
     └── <TIMESTAMP>.log
 ```
 
-## Notes and Justification
+## Implementation Notes
 
 **Pairs**
+Training on balanced pairs of same-class and different-class images naturally handles severe class imbalance. Rather than learning frequency-based priors that would bias toward the majority class, the network learns a similarity metric that generalizes across distributions. This pair-based approach also enables the network to leverage the full dataset more effectively since we can generate many training pairs from a small number of images. The procedure of setting a target number of times an image appears is used to expose the model to images from the minority class, aiming to aid the model in identifying similar characteristics between the undersampled class at test time.
 
 **Soft Top-k Voting**
+Using soft top-k voting at test time provides more robust predictions than direct classification or hard nearest-neighbor voting. By averaging the top-5 similarity scores per class rather than taking a single maximum, the method reduces sensitivity to outliers and the sampled reference images, and produces more stable decisions.
 
 **Pre-trained ResNet18**
+ResNet18 provides a strong pretrained feature extractor from ImageNet. With 11M parameters, it offers a good balance between model capacity and generalisation while remaining computationally efficient for training and inference. The pretrained weights give the network a head start on learning discriminative visual features, which is critical when working with limited medical imaging data.
 
-**Class Imbalances and Overfitting**
+**Balanced Accuracy**
+Balanced accuracy is the mean of recall across both classes: (recall_benign + recall_melanoma) / 2. Unlike standard accuracy, which can be misleadingly high on imbalanced datasets by simply predicting the majority class, balanced accuracy treats both classes equally regardless of their prevalence. With melanoma representing only 1.8% of cases, a naive classifier predicting all images as benign would achieve 98.2% accuracy but 50% balanced accuracy (100% recall on benign, 0% on melanoma). We use balanced accuracy for validation-based early stopping and final evaluation because it ensures the model learns to identify both classes effectively rather than exploiting class imbalance.
+
+**Addressing Class Imbalances and Overfitting**
+The extreme class imbalance is intrinsically addressed in the Siamese architecture, which learns similarity rather than classification. Balanced training pairs, with equal expected instances of each image in these pairs, ensure the network never sees the imbalance during training, while soft top-k voting at inference uses learned metric distances instead of probabilities, avoiding majority-class bias.
+Overfitting is mitigated through aggressive regularisation: dropout (0.5), L2 weight decay (1e-5), extensive data augmentation, early stopping on validation balanced accuracy, and gradient clipping.
 
 **Weighted L1 Distance:**
+The learnable alpha vector weights each dimension of the embedding space, allowing the network to emphasize the most discriminative features for melanoma classification. This weighted metric is more flexible than fixed distance functions like Euclidean or cosine similarity, and the weights are learned end-to-end through backpropagation during training.
 
 ## References
 
