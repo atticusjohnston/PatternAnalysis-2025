@@ -59,7 +59,7 @@ The implemented model uses a ResNet18 feature extractor pretrained on ImageNet a
 2. 70/15/15 stratified split on `target` label
 3. Generate balanced pairs for training only (50/50 same/different), with equal representations of each image throughout all pairs
 4. Resize to 224×224 with LANCZOS resampling
-5. Normalize: mean=[0.806, 0.620, 0.590], std=[0.085, 0.098, 0.110]
+5. Normalise: mean=[0.806, 0.620, 0.590], std=[0.085, 0.098, 0.110]
    - Mean and standard deviation calculated from entire training set (22,890 images)
 
 **Data Augmentation (training only):**
@@ -215,14 +215,14 @@ Class Probabilities:
 
 ## Training Details
 
-**Optimization:**
+**Optimisation:**
 - Loss: Binary cross-entropy (BCELoss) on training pairs
-- Optimizer: Adam (lr=1e-3, weight_decay=1e-5)
+- Optimiser: Adam (lr=1e-3, weight_decay=1e-5)
 - Scheduler: ExponentialLR (gamma=0.99, per-epoch decay)
 - Gradient clipping: max_norm=1.0
 - Early stopping: patience=5 epochs based on validation balanced accuracy
 
-**Regularization:**
+**Regularisation:**
 - L2 weight decay: 1e-5
 - Dropout: 0.5 (custom FC layers)
 - Data augmentation (training only)
@@ -326,7 +326,7 @@ s4742853-siamese-melanoma-classifier/
 ## Notes and Justifications
 
 **Pairs**
-Training on balanced pairs of same-class and different-class images naturally handles severe class imbalance. Rather than learning frequency-based priors that would bias toward the majority class, the network learns a similarity metric that generalizes across distributions. This pair-based approach also enables the network to leverage the full dataset more effectively since we can generate many training pairs from a small number of images. The procedure of setting a target number of times an image appears is used to expose the model to images from the minority class, aiming to aid the model in identifying similar characteristics between the undersampled class at test time.
+Training on balanced pairs of same-class and different-class images naturally handles severe class imbalance. Rather than learning frequency-based priors that would bias toward the majority class, the network learns a similarity metric that generalises across distributions. This pair-based approach also enables the network to leverage the full dataset more effectively since we can generate many training pairs from a small number of images. The procedure of setting a target number of times an image appears is used to expose the model to images from the minority class, aiming to aid the model in identifying similar characteristics between the undersampled class at test time.
 
 **Soft Top-k Voting**
 Using soft top-k voting at test time provides more robust predictions than direct classification or hard nearest-neighbor voting. By averaging the top-5 similarity scores per class rather than taking a single maximum, the method reduces sensitivity to outliers and the sampled reference images, and produces more stable decisions.
@@ -342,7 +342,7 @@ The extreme class imbalance is intrinsically addressed in the Siamese architectu
 Overfitting is mitigated through aggressive regularisation: dropout (0.5), L2 weight decay (1e-5), extensive data augmentation, early stopping on validation balanced accuracy, and gradient clipping.
 
 **Weighted L1 Distance:**
-The learnable alpha vector weights each dimension of the embedding space, allowing the network to emphasize the most discriminative features for melanoma classification. This weighted metric is more flexible than fixed distance functions like Euclidean or cosine similarity, and the weights are learned end-to-end through backpropagation during training.
+The learnable alpha vector weights each dimension of the embedding space, allowing the network to emphasise the most discriminative features for melanoma classification. This weighted metric is more flexible than fixed distance functions like Euclidean or cosine similarity, and the weights are learned end-to-end through backpropagation during training.
 
 ## References
 
