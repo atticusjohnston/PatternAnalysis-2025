@@ -1,6 +1,6 @@
 # Siamese Network Melanoma Classifier
 
-Binary melanoma classification using a Siamese network on ISIC 2020 data. Achieves ##.##% test accuracy with soft top-k voting.
+Binary melanoma classification using a Siamese network on ISIC 2020 data. Achieves 71.32% test accuracy with soft top-k voting.
 
 ## Overview
 
@@ -252,26 +252,36 @@ The testing procedure uses a soft top-k voting scheme rather than direct classif
 ## Results
 
 **Test Set Performance (4,906 images):**
-- **Accuracy: [PLACEHOLDER]%** ([PLACEHOLDER]/4,906 correct)
-- **Balanced Accuracy: [PLACEHOLDER]**
+- **Accuracy: 71.32%** (3,499/4,906 correct)
+- **Balanced Accuracy: 60.01%**
 - Model: PretrainedSiameseNetwork (ResNet18)
-- Training: 10 epochs, batch_size=512, lr=1e-3
+- Training: 8 epochs (early stopped), batch_size=512, lr=1e-4, k=10
 
 **Confusion Matrix:**
 
 |               | Predicted Benign | Predicted Melanoma |
 |---------------|------------------|--------------------|
-| **Actual Benign**    | [PLACEHOLDER] (TN)       | [PLACEHOLDER] (FP)           |
-| **Actual Melanoma**  | [PLACEHOLDER] (FN)          | [PLACEHOLDER] (TP)            |
+| **Actual Benign**    | 3,457 (TN)       | 1,362 (FP)           |
+| **Actual Melanoma**  | 45 (FN)          | 42 (TP)            |
 
 **Per-class Recall:**
-- Class 0 (benign): [PLACEHOLDER]%
-- Class 1 (melanoma): [PLACEHOLDER]%
+- Class 0 (benign): 71.74%
+- Class 1 (melanoma): 48.28%
 
 **Analysis:**
-[PLACEHOLDER - Analysis will be added after final test results]
+The model demonstrates moderate performance on the highly imbalanced ISIC 2020 dataset. While achieving 71.32% raw accuracy, the balanced accuracy of 60.01% reveals the model's challenge in handling class imbalance. The melanoma recall of 48.28% indicates the model correctly identifies approximately half of melanoma cases.
 
-**Clinical Context:** Higher false positive rate is acceptable in melanoma screening. Better to flag suspicious lesions for expert review than miss malignant cases.
+**Sensitivity to Hyperparameters:**
+
+Training is highly sensitive to both learning rate and the K value used in soft top-k voting:
+
+- **Learning Rate Sensitivity**: The choice of learning rate critically impacts convergence and final performance. Early experiments with lr=1e-3 showed unstable training and overfitting, with the model oscillating between predicting predominantly benign (epoch 2: 97.45% accuracy, 50.17% balanced accuracy) or predominantly melanoma (epoch 1: 5.55% accuracy, 51.36% balanced accuracy). Reducing to lr=1e-4 provided more stable convergence, though the model still exhibited significant epoch-to-epoch variation in class predictions. This sensitivity stems from the Siamese architecture's reliance on learning subtle distance metrics - too high a learning rate causes the embedding space to collapse or diverge, while too low prevents adequate separation between classes.
+
+- **K Value Sensitivity**: The number of reference images per class (K=10) and the soft top-k voting mechanism (using top-5 scores) directly affect prediction robustness. With only 87 melanoma cases in the validation set, K=10 means predictions rely on just 11.5% of available melanoma references. Smaller K values risk overfitting to non-representative exemplars, while larger K values may dilute discriminative signals. The top-5 averaging within K=10 provides some robustness against outliers, but preliminary testing showed substantial variance in melanoma recall (±15-20%) when K varied between 5 and 20.
+
+**Limitations:**
+
+The model falls short of the target 80% accuracy specified for this task, indicating room for improvement through hyperparameter tuning, architecture modifications, or alternative training strategies such as focal loss to better handle class imbalance.
 
 ## Project Structure
 
