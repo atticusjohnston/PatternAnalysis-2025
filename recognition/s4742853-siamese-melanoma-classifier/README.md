@@ -4,7 +4,7 @@ Binary melanoma classification using a Siamese network on ISIC 2020 data. Achiev
 
 ## Overview
 
-This project addresses binary classification of skin lesion images (benign vs melanoma) on the highly imbalanced ISIC 2020 Kaggle Challenge dataset, where melanoma represents only 1.8% of cases. Rather than training a standard classifier, we train a Siamese neural network to discriminate between same-class and different-class image pairs. This approach learns a robust similarity metric, enabling the network to determine whether two images belong to the same diagnostic class. At test time, we use soft top-k voting where each test image is compared against k=10 reference images per class, taking the top-3 highest similarity scores for each class and averaging them. The class with the higher mean similarity is predicted. The twin network architecture uses shared weights across both branches and is joined by a learned weighted L1 distance metric that maps to a probability via sigmoid activation.
+This project addresses binary classification of skin lesion images (benign vs melanoma) on the highly imbalanced ISIC 2020 Kaggle Challenge dataset, where melanoma represents only 1.8% of cases. Rather than training a standard classifier, we train a Siamese neural network to discriminate between same-class and different-class image pairs. This approach learns a similarity metric, enabling the network to determine whether two images belong to the same diagnostic class. At test time, we use soft top-k voting where each test image is compared against k=10 reference images per class, taking the top-3 highest similarity scores for each class and averaging them. The class with the higher mean similarity is predicted. The twin network architecture uses shared weights across both branches and is joined by a learned weighted L1 distance metric that maps to a probability via sigmoid activation.
 
 ## How It Works
 
@@ -323,7 +323,7 @@ s4742853-siamese-melanoma-classifier/
     └── <TIMESTAMP>.log
 ```
 
-## Implementation Notes
+## Notes and Justifications
 
 **Pairs**
 Training on balanced pairs of same-class and different-class images naturally handles severe class imbalance. Rather than learning frequency-based priors that would bias toward the majority class, the network learns a similarity metric that generalizes across distributions. This pair-based approach also enables the network to leverage the full dataset more effectively since we can generate many training pairs from a small number of images. The procedure of setting a target number of times an image appears is used to expose the model to images from the minority class, aiming to aid the model in identifying similar characteristics between the undersampled class at test time.
